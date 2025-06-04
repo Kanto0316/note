@@ -187,8 +187,8 @@
       cursor: pointer;
     }
 
-    /* Modal de confirmation */
-    #modalOverlay {
+    /* Modal standard */
+    .modal-overlay {
       position: fixed;
       top: 0;
       left: 0;
@@ -200,7 +200,7 @@
       align-items: center;
       z-index: 10;
     }
-    #modalContent {
+    .modal-content {
       background-color: #fff;
       padding: 1.5rem;
       border-radius: 8px;
@@ -209,7 +209,7 @@
       width: 300px;
       text-align: center;
     }
-    #modalContent h2 {
+    .modal-content h2 {
       margin-top: 0;
       font-size: 1.2rem;
       margin-bottom: 1rem;
@@ -226,73 +226,17 @@
       cursor: pointer;
       font-size: 1rem;
     }
-    .modal-btn.yes {
-      background-color: #c0392b;
-      color: #fff;
-    }
-    .modal-btn.no {
-      background-color: #7f8c8d;
-      color: #fff;
-    }
-
-    /* Modal de saisie du nom d’utilisateur */
-    #modalNameOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.4);
-      display: none; /* masqué par défaut */ 
-      justify-content: center;
-      align-items: center;
-      z-index: 20;
-    }
-    #modalNameContent {
-      background-color: #fff;
-      padding: 1.5rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      max-width: 90%;
-      width: 300px;
-      text-align: center;
-    }
-    #modalNameContent h2 {
-      margin-top: 0;
-      font-size: 1.2rem;
-      margin-bottom: 1rem;
-    }
-    #modalNameContent input {
-      width: 100%;
-      padding: 0.5rem;
-      font-size: 1rem;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    #modalNameContent .modal-buttons {
-      display: flex;
-      justify-content: space-around;
-    }
-    #modalNameContent .modal-btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-    #modalNameContent .modal-btn.ok {
+    .modal-btn.ok {
       background-color: #2980b9;
       color: #fff;
     }
-    #modalNameContent .modal-btn.cancel {
+    .modal-btn.cancel {
       background-color: #7f8c8d;
       color: #fff;
     }
 
-    /* Modal de modification du nom */
-    #modalEditOverlay {
+    /* Modal de restriction */
+    #modalLimitOverlay {
       position: fixed;
       top: 0;
       left: 0;
@@ -302,49 +246,27 @@
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 20;
+      z-index: 15;
     }
-    #modalEditContent {
+    #modalLimitContent {
       background-color: #fff;
       padding: 1.5rem;
       border-radius: 8px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       max-width: 90%;
-      width: 300px;
+      width: 280px;
       text-align: center;
     }
-    #modalEditContent h2 {
+    #modalLimitContent h2 {
       margin-top: 0;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       margin-bottom: 1rem;
+      color: #c0392b;
     }
-    #modalEditContent input {
-      width: 100%;
-      padding: 0.5rem;
-      font-size: 1rem;
-      margin-bottom: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    #modalEditContent .modal-buttons {
-      display: flex;
-      justify-content: space-around;
-    }
-    #modalEditContent .modal-btn {
-      padding: 0.5rem 1rem;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1rem;
-    }
-    #modalEditContent .modal-btn.ok {
+    #modalLimitContent .modal-btn {
       background-color: #2980b9;
       color: #fff;
-    }
-    #modalEditContent .modal-btn.cancel {
-      background-color: #7f8c8d;
-      color: #fff;
+      margin-top: 0.5rem;
     }
   </style>
 </head>
@@ -377,19 +299,19 @@
   </main>
 
   <!-- Modal de confirmation de suppression -->
-  <div id="modalOverlay">
-    <div id="modalContent">
+  <div id="modalOverlay" class="modal-overlay">
+    <div id="modalContent" class="modal-content">
       <h2>Voulez-vous supprimer cet élément ?</h2>
       <div class="modal-buttons">
-        <button class="modal-btn yes" id="confirmDelete">Oui</button>
-        <button class="modal-btn no" id="cancelDelete">Non</button>
+        <button class="modal-btn ok" id="confirmDelete">Oui</button>
+        <button class="modal-btn cancel" id="cancelDelete">Non</button>
       </div>
     </div>
   </div>
 
   <!-- Modal de saisie du nom d’utilisateur -->
-  <div id="modalNameOverlay">
-    <div id="modalNameContent">
+  <div id="modalNameOverlay" class="modal-overlay">
+    <div id="modalNameContent" class="modal-content">
       <h2>Entrer votre nom</h2>
       <input type="text" id="inputUserName" placeholder="Votre nom…" maxlength="20" />
       <div class="modal-buttons">
@@ -400,14 +322,22 @@
   </div>
 
   <!-- Modal de modification du nom -->
-  <div id="modalEditOverlay">
-    <div id="modalEditContent">
+  <div id="modalEditOverlay" class="modal-overlay">
+    <div id="modalEditContent" class="modal-content">
       <h2>Modifier votre nom ?</h2>
       <input type="text" id="inputEditUserName" maxlength="20" />
       <div class="modal-buttons">
         <button class="modal-btn ok" id="okEditName">OK</button>
         <button class="modal-btn cancel" id="cancelEditName">Annuler</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Modal de restriction 24h -->
+  <div id="modalLimitOverlay">
+    <div id="modalLimitContent">
+      <h2>Vous pouvez changer un nom 1 fois par jour</h2>
+      <button class="modal-btn ok" onclick="hideLimitModal()">OK</button>
     </div>
   </div>
 
@@ -420,16 +350,17 @@
     import {
       getFirestore,
       collection,
-      addDoc,
-      deleteDoc,
-      updateDoc,
       doc,
       setDoc,
+      getDoc,
+      deleteDoc,
+      addDoc,
       onSnapshot,
-      orderBy,
       query,
       where,
       getDocs,
+      orderBy,
+      updateDoc,
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
@@ -477,6 +408,8 @@
     const inputEditUserName  = document.getElementById("inputEditUserName");
     const okEditNameBtn      = document.getElementById("okEditName");
     const cancelEditNameBtn  = document.getElementById("cancelEditName");
+
+    const modalLimitOverlay  = document.getElementById("modalLimitOverlay");
 
     let idNoteToDelete = null;
     let notesLocales   = [];
@@ -710,30 +643,24 @@
 
     // Vérifier si un nom existe déjà
     async function nomExiste(nom) {
-      const qUser = query(usersCollection, where("name", "==", nom));
-      const querySnapshot = await getDocs(qUser);
-      return !querySnapshot.empty;
+      const userDocRef = doc(db, "users", nom);
+      const userSnap = await getDoc(userDocRef);
+      return userSnap.exists();
     }
 
-    // Créer un nouvel utilisateur dans Firestore
-    async function creerUtilisateur(nom) {
-      try {
-        await addDoc(usersCollection, {
-          name: nom,
-          timestamp: serverTimestamp()
-        });
-      } catch (err) {
-        console.error("Erreur création utilisateur :", err);
-      }
+    // Créer ou mettre à jour un utilisateur dans Firestore
+    async function creerOuMettreAJourUtilisateur(nom) {
+      const userDocRef = doc(db, "users", nom);
+      await setDoc(userDocRef, {
+        name: nom,
+        lastNameChange: serverTimestamp()
+      });
     }
 
     // Supprimer un document utilisateur selon son nom
     async function supprimerUtilisateurParNom(nom) {
-      const qUser = query(usersCollection, where("name", "==", nom));
-      const snapshot = await getDocs(qUser);
-      for (const docSnap of snapshot.docs) {
-        await deleteDoc(doc(db, "users", docSnap.id));
-      }
+      const userDocRef = doc(db, "users", nom);
+      await deleteDoc(userDocRef);
     }
 
     // Enregistrer la présence dans Firestore
@@ -761,6 +688,14 @@
       mettreAJourCompteurPresence(snapshot);
     });
 
+    // Afficher la modal de restriction
+    function showLimitModal() {
+      modalLimitOverlay.style.display = "flex";
+    }
+    function hideLimitModal() {
+      modalLimitOverlay.style.display = "none";
+    }
+
     // Gérer la saisie du nom au chargement
     async function demanderNomUtilisateur() {
       // Si un nom est déjà stocké en localStorage, on l’utilise
@@ -768,11 +703,12 @@
       if (stocke) {
         userName = stocke;
         document.title = userName;
-        // Mettre à jour le texte principal du header sans écraser le compteur
         headerTitle.childNodes[0].textContent = userName;
         modalNameOverlay.style.display = "none";
         mainContent.classList.add("active");
 
+        // Créer utilisateur ou mettre à jour lastNameChange à l’inscription initiale
+        await creerOuMettreAJourUtilisateur(userName);
         // Créer présence dès que le nom est chargé
         await enregistrerPresence();
         return;
@@ -800,7 +736,7 @@
 
           // Enregistrer et fermer modal
           localStorage.setItem("userName", userName);
-          await creerUtilisateur(userName);
+          await creerOuMettreAJourUtilisateur(userName);
           document.title = userName;
           headerTitle.childNodes[0].textContent = userName;
           modalNameOverlay.style.display = "none";
@@ -814,7 +750,7 @@
           const alea = randomLetters(4);
           userName = "utilisateur" + alea;
           localStorage.setItem("userName", userName);
-          await creerUtilisateur(userName);
+          await creerOuMettreAJourUtilisateur(userName);
           document.title = userName;
           headerTitle.childNodes[0].textContent = userName;
           modalNameOverlay.style.display = "none";
@@ -826,7 +762,7 @@
     }
 
     // Ouvrir le modal de modification de nom
-    headerTitle.addEventListener("click", () => {
+    headerTitle.addEventListener("click", async () => {
       inputEditUserName.value = userName;
       modalEditOverlay.style.display = "flex";
     });
@@ -842,16 +778,34 @@
         modalEditOverlay.style.display = "none";
         return;
       }
+
+      // Vérifier si on peut changer (24h)
+      const oldUserDocRef = doc(db, "users", userName);
+      const oldUserSnap = await getDoc(oldUserDocRef);
+      const data = oldUserSnap.data();
+      const lastChange = data?.lastNameChange?.toDate?.();
+      const now = new Date();
+      if (lastChange && now - lastChange < 24 * 60 * 60 * 1000) {
+        // moins de 24h depuis le dernier changement
+        modalEditOverlay.style.display = "none";
+        showLimitModal();
+        return;
+      }
+
+      // Vérifier si le nouveau nom existe déjà
       const existe = await nomExiste(nouveauNom);
       if (existe) {
         alert("Ce nom est déjà utilisé, veuillez en choisir un autre.");
         return;
       }
-      // On met à jour localStorage et Firestore
+
+      // On peut changer
       const ancienNom = userName;
       userName = nouveauNom;
       localStorage.setItem("userName", userName);
-      await creerUtilisateur(userName);
+
+      // Créer ou mettre à jour le nouveau doc utilisateur avec lastNameChange
+      await creerOuMettreAJourUtilisateur(userName);
       document.title = userName;
       headerTitle.childNodes[0].textContent = userName;
 
