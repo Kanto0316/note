@@ -14,7 +14,8 @@
       background-color: #f7f7f7;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      /* On enlève la hauteur fixe pour éviter tout scroll interne */
+      min-height: 100vh;
     }
     header {
       background-color: #2c3e50;
@@ -50,18 +51,24 @@
       border-radius: 0 4px 4px 0;
       cursor: pointer;
     }
-    /* Nouveau champ recherche */
+    /* Champ de recherche */
     #recherche {
       width: 100%;
       padding: 0.5rem;
-      margin-bottom: 1rem;
+      margin-bottom: 0.25rem;
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
+    /* Zone d’affichage du mot recherché */
+    #etatRecherche {
+      font-size: 0.9rem;
+      color: #333;
+      margin-bottom: 0.75rem;
+      min-height: 1.2rem; /* réserve de l'espace même si vide */
+    }
     #liste-notes {
-      flex: 1;
-      overflow-y: auto;
+      /* On supprime overflow-y pour que ce soit multiligne et page qui défile */
       background-color: #fff;
       border: 1px solid #ddd;
       border-radius: 4px;
@@ -71,13 +78,10 @@
       border-bottom: 1px solid #eee;
       padding: 0.5rem;
       position: relative;
+      white-space: pre-wrap; /* conservez les sauts de ligne des notes */
     }
     .note:last-child {
       border-bottom: none;
-    }
-    .note p {
-      margin: 0;
-      white-space: pre-wrap;
     }
     .supprimer {
       position: absolute;
@@ -95,6 +99,7 @@
       font-size: 0.9rem;
       color: #666;
       background-color: #ecf0f1;
+      margin-top: auto;
     }
   </style>
 </head>
@@ -112,9 +117,12 @@
     <!-- Champ de recherche rapide -->
     <input type="text" id="recherche" placeholder="Recherche rapide..." />
 
-    <!-- Zone d’affichage des notes -->
+    <!-- Zone pour afficher le mot recherché -->
+    <div id="etatRecherche"></div>
+
+    <!-- Zone d’affichage des notes (multiligne) -->
     <div id="liste-notes">
-      <!-- Les notes s’afficheront ici -->
+      <!-- Les notes s’afficheront ici en plusieurs lignes -->
     </div>
   </main>
 
@@ -137,7 +145,7 @@
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-    // 2) Votre configuration Firebase (déjà fournie)
+    // 2) Votre configuration Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyBbziUFiWuK9_iOeK-cyB1h8GfovQoU45A",
       authDomain: "note-c08d3.firebaseapp.com",
@@ -160,6 +168,7 @@
     const textarea = document.getElementById("texte");
     const btnAjouter = document.getElementById("btnAjouter");
     const inputRecherche = document.getElementById("recherche");
+    const etatRechercheDiv = document.getElementById("etatRecherche");
     const listeNotesDiv = document.getElementById("liste-notes");
 
     // Tableau local pour stocker les notes reçues
@@ -190,6 +199,13 @@
     function renderNotes() {
       const filtre = inputRecherche.value.trim().toLowerCase();
       listeNotesDiv.innerHTML = "";
+
+      // Afficher le mot recherché (ou vide)
+      if (filtre) {
+        etatRechercheDiv.textContent = `Résultats pour : “${filtre}”`;
+      } else {
+        etatRechercheDiv.textContent = "";
+      }
 
       for (const note of notesLocales) {
         // Si la recherche n’est pas vide, on filtre le contenu
