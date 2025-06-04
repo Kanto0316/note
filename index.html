@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bloc-note collaboratif</title>
+
+  <!-- ========== Style CSS inline ========== -->
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background-color: #2c3e50;
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 1rem;
+    }
+    #nouveau-note {
+      display: flex;
+      margin-bottom: 1rem;
+    }
+    #nouveau-note textarea {
+      flex: 1;
+      resize: vertical;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px 0 0 4px;
+    }
+    #nouveau-note button {
+      padding: 0 1rem;
+      border: none;
+      background-color: #27ae60;
+      color: #fff;
+      font-size: 1rem;
+      border-radius: 0 4px 4px 0;
+      cursor: pointer;
+    }
+    #liste-notes {
+      flex: 1;
+      overflow-y: auto;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 0.5rem;
+    }
+    .note {
+      border-bottom: 1px solid #eee;
+      padding: 0.5rem;
+      position: relative;
+    }
+    .note:last-child {
+      border-bottom: none;
+    }
+    .note p {
+      margin: 0;
+      white-space: pre-wrap;
+    }
+    .supprimer {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: none;
+      border: none;
+      color: #c0392b;
+      font-size: 1.2rem;
+      cursor: pointer;
+    }
+    footer {
+      text-align: center;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+      color: #666;
+      background-color: #ecf0f1;
+    }
+  </style>
+</head>
+<body>
+
+  <header>Bloc-note collaboratif</header>
+
+  <main>
+    <!-- Zone de saisie pour une nouvelle note -->
+    <div id="nouveau-note">
+      <textarea id="texte" rows="2" placeholder="Écrivez ici..."></textarea>
+      <button id="btnAjouter">Ajouter</button>
+    </div>
+
+    <!-- Zone d’affichage des notes -->
+    <div id="liste-notes">
+      <!-- Chaque note apparaîtra ici -->
+    </div>
+  </main>
+
+  <footer>Les notes sont stockées en temps réel dans Firestore.</footer>
+
+  <!-- ========== Scripts Firebase (modulaire) + JS inline ========== -->
+  <script type="module">
+    // 1) Importer les modules nécessaires depuis le CDN Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      deleteDoc,
+      doc,
+      onSnapshot,
+      orderBy,
+      query,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+    // 2) Votre configuration Firebase (remplacez par vos propres valeurs)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbziUFiWuK9_iOeK-cyB1h8GfovQoU45A",
+      authDomain: "note-c08d3.firebaseapp.com",
+      projectId: "note-c08d3",
+      storageBucket: "note-c08d3.firebasestorage.app",
+      messagingSenderId: "49825516812",
+      appId: "1:49825516812:web:4684bf1a383578856e8d29",
+      measurementId: "G-3VR9RGMS5N"
+    };
+
+    // 3) Initialiser Firebase et les services Analytics + Firestore
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+    const db = getFirestore(app);
+
+    // 4) Référence vers la collection "notes" dans Firestore
+    const notesCollection = collection(db, "notes");
+
+    // 5) Sélection des éléments DOM
+    const textarea = document.getElementById("texte");
+    const btnAjouter = document.getElementById("btnAjouter");
+    const listeNotesDiv = document.getElementById("liste-notes");
+
+    // 6) Fonction pour ajouter une note dans Firestore
+    async function ajouterNoteDansFirestore(texte) {
+      try {
+        await addDoc(notesCollection, {
+          contenu: texte,
+          dateCreation: serverTimestamp()
+        });
+      } catch (err) {
+        console.error("Erreur ajout note :", err);
+      }
+    }
+
+    // 7) Fonction pour supprimer une note (par son ID)
+    async function supprimerNoteDansFirestore(idDoc) {
+      try {
+        await deleteDoc(doc(db, "notes", idDoc));
+      } catch (err) {
+        console.error("Erreur suppression :", err);
+      }
+    }
+
+    // 8) Écoute en temps réel de la collection "notes", triée par dateCreation croissante
+    const q = query(notesCollection, orderBy("dateCreation"));
+    onSnapshot(q, (snapshot) => {
+      // Vider l’affichage existant
+      listeNotesDiv.innerHTML = "";
+
+      snapshot.forEach((docSnapshot) => {
+        const data = docSnapshot.data();
+        const idDoc = docSnapshot.id;
+        const contenu = data.contenu || "";
+
+        // Créer l’élément HTML pour cette note
+        const divNote = document.createElement("div");
+        divNote.className = "note";
+
+        const parag = document.createElement("p");
+        parag.textContent = contenu;
+
+        const btnSupprimer = document.createElement("button");
+        btnSupprimer.className = "supprimer";
+        btnSupprimer.innerHTML = "&times;"; // symbole de croix
+        btnSupprimer.onclick = () => {
+          if (confirm("Supprimer cette note ?")) {
+            supprimerNoteDansFirestore(idDoc);
+          }
+        };
+
+        divNote.appendChild(parag);
+        divNote.appendChild(btnSupprimer);
+        listeNotesDiv.appendChild(divNote);
+      });
+    }, (err) => {
+      console.error("Erreur écoute Firestore :", err);
+    });
+
+    // 9) Gestion du clic sur “Ajouter”
+    btnAjouter.addEventListener("click", () => {
+      const texte = textarea.value.trim();
+      if (texte === "") {
+        alert("Vous ne pouvez pas ajouter une note vide.");
+        return;
+      }
+      ajouterNoteDansFirestore(texte);
+      textarea.value = ""; // vider la zone
+      textarea.focus();
+    });
+
+    // 10) Envoi par Ctrl+Entrée (optionnel)
+    textarea.addEventListener("keydown", (e) => {
+      if (e.ctrlKey && e.key === "Enter") {
+        btnAjouter.click();
+      }
+    });
+  </script>
+</body>
+</html>
