@@ -229,7 +229,7 @@
       width: 100%;
       height: 100%;
       background-color: rgba(0,0,0,0.4);
-      display: flex;
+      display: none; /* masqué par défaut */ 
       justify-content: center;
       align-items: center;
       z-index: 20;
@@ -640,6 +640,8 @@
         userName = stocke;
         document.title = userName;
         headerTitle.textContent = userName;
+        // On ne montre pas le modal
+        modalNameOverlay.style.display = "none";
         mainContent.classList.add("active");
         return;
       }
