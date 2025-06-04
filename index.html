@@ -706,6 +706,15 @@
       }
     }
 
+    // Supprimer un document utilisateur selon son nom
+    async function supprimerUtilisateurParNom(nom) {
+      const qUser = query(usersCollection, where("name", "==", nom));
+      const snapshot = await getDocs(qUser);
+      for (const docSnap of snapshot.docs) {
+        await deleteDoc(doc(db, "users", docSnap.id));
+      }
+    }
+
     // Gérer la saisie du nom au chargement
     async function demanderNomUtilisateur() {
       // Si un nom est déjà stocké en localStorage, on l’utilise
@@ -800,6 +809,9 @@
       for (const docSnapshot of snapshotUpdate.docs) {
         await updateDoc(doc(db, "notes", docSnapshot.id), { auteur: userName });
       }
+
+      // Supprimer l’ancien nom dans la collection 'users'
+      await supprimerUtilisateurParNom(ancienNom);
 
       modalEditOverlay.style.display = "none";
     };
