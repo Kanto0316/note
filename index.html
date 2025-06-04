@@ -31,7 +31,7 @@
     }
     #nouveau-note {
       display: flex;
-      margin-bottom: 1rem;
+      margin-bottom: 0.5rem;
     }
     #nouveau-note textarea {
       flex: 1;
@@ -49,6 +49,15 @@
       font-size: 1rem;
       border-radius: 0 4px 4px 0;
       cursor: pointer;
+    }
+    /* Nouveau champ recherche */
+    #recherche {
+      width: 100%;
+      padding: 0.5rem;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
     }
     #liste-notes {
       flex: 1;
@@ -100,9 +109,12 @@
       <button id="btnAjouter">Ajouter</button>
     </div>
 
+    <!-- Champ de recherche rapide -->
+    <input type="text" id="recherche" placeholder="Recherche rapide..." />
+
     <!-- Zone d’affichage des notes -->
     <div id="liste-notes">
-      <!-- Chaque note apparaîtra ici -->
+      <!-- Les notes s’afficheront ici -->
     </div>
   </main>
 
@@ -125,7 +137,7 @@
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
-    // 2) Votre configuration Firebase (remplacez par vos propres valeurs)
+    // 2) Votre configuration Firebase (déjà fournie)
     const firebaseConfig = {
       apiKey: "AIzaSyBbziUFiWuK9_iOeK-cyB1h8GfovQoU45A",
       authDomain: "note-c08d3.firebaseapp.com",
@@ -147,7 +159,11 @@
     // 5) Sélection des éléments DOM
     const textarea = document.getElementById("texte");
     const btnAjouter = document.getElementById("btnAjouter");
+    const inputRecherche = document.getElementById("recherche");
     const listeNotesDiv = document.getElementById("liste-notes");
+
+    // Tableau local pour stocker les notes reçues
+    let notesLocales = [];
 
     // 6) Fonction pour ajouter une note dans Firestore
     async function ajouterNoteDansFirestore(texte) {
@@ -170,42 +186,58 @@
       }
     }
 
-    // 8) Écoute en temps réel de la collection "notes", triée par dateCreation croissante
-    const q = query(notesCollection, orderBy("dateCreation"));
-    onSnapshot(q, (snapshot) => {
-      // Vider l’affichage existant
+    // 8) Fonction pour réafficher les notes selon le filtre de recherche
+    function renderNotes() {
+      const filtre = inputRecherche.value.trim().toLowerCase();
       listeNotesDiv.innerHTML = "";
 
-      snapshot.forEach((docSnapshot) => {
-        const data = docSnapshot.data();
-        const idDoc = docSnapshot.id;
-        const contenu = data.contenu || "";
+      for (const note of notesLocales) {
+        // Si la recherche n’est pas vide, on filtre le contenu
+        if (filtre && !note.contenu.toLowerCase().includes(filtre)) {
+          continue;
+        }
 
         // Créer l’élément HTML pour cette note
         const divNote = document.createElement("div");
         divNote.className = "note";
 
         const parag = document.createElement("p");
-        parag.textContent = contenu;
+        parag.textContent = note.contenu;
 
         const btnSupprimer = document.createElement("button");
         btnSupprimer.className = "supprimer";
-        btnSupprimer.innerHTML = "&times;"; // symbole de croix
+        btnSupprimer.innerHTML = "&times;";
         btnSupprimer.onclick = () => {
           if (confirm("Supprimer cette note ?")) {
-            supprimerNoteDansFirestore(idDoc);
+            supprimerNoteDansFirestore(note.id);
           }
         };
 
         divNote.appendChild(parag);
         divNote.appendChild(btnSupprimer);
         listeNotesDiv.appendChild(divNote);
+      }
+    }
+
+    // 9) Écoute en temps réel de la collection "notes", triée par dateCreation croissante
+    const q = query(notesCollection, orderBy("dateCreation"));
+    onSnapshot(q, (snapshot) => {
+      notesLocales = []; // Réinitialiser le tableau local
+
+      snapshot.forEach((docSnapshot) => {
+        const data = docSnapshot.data();
+        notesLocales.push({
+          id: docSnapshot.id,
+          contenu: data.contenu || ""
+        });
       });
+
+      renderNotes();
     }, (err) => {
       console.error("Erreur écoute Firestore :", err);
     });
 
-    // 9) Gestion du clic sur “Ajouter”
+    // 10) Gestion du clic sur “Ajouter”
     btnAjouter.addEventListener("click", () => {
       const texte = textarea.value.trim();
       if (texte === "") {
@@ -213,16 +245,19 @@
         return;
       }
       ajouterNoteDansFirestore(texte);
-      textarea.value = ""; // vider la zone
+      textarea.value = ""; // Vider la zone
       textarea.focus();
     });
 
-    // 10) Envoi par Ctrl+Entrée (optionnel)
+    // 11) Envoi par Ctrl+Entrée (optionnel)
     textarea.addEventListener("keydown", (e) => {
       if (e.ctrlKey && e.key === "Enter") {
         btnAjouter.click();
       }
     });
+
+    // 12) Réagir au champ de recherche : à chaque saisie, rafraîchir l’affichage
+    inputRecherche.addEventListener("input", renderNotes);
   </script>
 </body>
 </html>
