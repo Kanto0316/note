@@ -69,15 +69,26 @@
       cursor: pointer;
     }
 
-    /* Champ de recherche */
+    /* Container de recherche et compteur */
+    .search-container {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 0.75rem;
+    }
     #recherche {
       width: 100%;
       padding: 0.5rem;
-      margin-bottom: 0.25rem;
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
+    #userCount {
+      margin-top: 0.25rem;
+      font-size: 0.9rem;
+      color: #333;
+      text-align: right;
+    }
+
     /* Zone d’affichage du mot recherché */
     #etatRecherche {
       font-size: 0.9rem;
@@ -346,8 +357,11 @@
       <button id="btnAjouter">Ajouter</button>
     </div>
 
-    <!-- Champ de recherche rapide -->
-    <input type="text" id="recherche" placeholder="Rechercher..." />
+    <!-- Container recherche + compteur -->
+    <div class="search-container">
+      <input type="text" id="recherche" placeholder="Recherche rapide..." />
+      <div id="userCount">0 Connecté(e).</div>
+    </div>
 
     <!-- Zone pour afficher le mot recherché -->
     <div id="etatRecherche"></div>
@@ -393,7 +407,7 @@
     </div>
   </div>
 
-  <footer>Kanto Fifaliana @2025.</footer>
+  <footer>Les notes sont stockées en temps réel dans Firestore.</footer>
 
   <!-- ========== Scripts Firebase (modulaire) + JS inline ========== -->
   <script type="module">
@@ -442,6 +456,7 @@
     const listeNotesDiv  = document.getElementById("liste-notes");
     const mainContent    = document.getElementById("mainContent");
     const headerTitle    = document.getElementById("headerTitle");
+    const userCountDiv   = document.getElementById("userCount");
 
     const modalOverlay   = document.getElementById("modalOverlay");
     const confirmDeleteBtn = document.getElementById("confirmDelete");
@@ -714,6 +729,17 @@
         await deleteDoc(doc(db, "users", docSnap.id));
       }
     }
+
+    // Mettre à jour le compteur d’utilisateurs connectés
+    function mettreAJourCompteur(snapshot) {
+      const count = snapshot.size;
+      userCountDiv.textContent = `${count} Connecté(e).`;
+    }
+
+    // Écoute en temps réel de la collection 'users' pour le compteur
+    onSnapshot(usersCollection, (snapshot) => {
+      mettreAJourCompteur(snapshot);
+    });
 
     // Gérer la saisie du nom au chargement
     async function demanderNomUtilisateur() {
