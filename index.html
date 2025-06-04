@@ -18,12 +18,21 @@
       min-height: 100vh;
     }
     header {
+      position: relative;
       background-color: #2c3e50;
       color: #fff;
       padding: 1rem;
       text-align: center;
       font-size: 1.5rem;
       cursor: pointer; /* cliquable pour modifier le nom */
+    }
+    #userCountHeader {
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      color: #fff;
     }
     main {
       flex: 1;
@@ -69,10 +78,8 @@
       cursor: pointer;
     }
 
-    /* Container de recherche + compteur */
+    /* Container de recherche */
     .search-container {
-      display: flex;
-      flex-direction: column;
       margin-bottom: 0.75rem;
     }
     #recherche {
@@ -81,12 +88,6 @@
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 4px;
-    }
-    #userCount {
-      margin-top: 0.25rem;
-      font-size: 0.9rem;
-      color: #333;
-      text-align: right;
     }
 
     /* Zone d’affichage du mot recherché */
@@ -348,7 +349,10 @@
 </head>
 <body>
 
-  <header id="headerTitle">Bloc-note collaboratif</header>
+  <header id="headerTitle">
+    Bloc-note collaboratif
+    <div id="userCountHeader">0 Connecté(e).</div>
+  </header>
 
   <main id="mainContent">
     <!-- Zone de saisie pour une nouvelle note -->
@@ -357,10 +361,9 @@
       <button id="btnAjouter">Ajouter</button>
     </div>
 
-    <!-- Container recherche + compteur -->
+    <!-- Container recherche -->
     <div class="search-container">
       <input type="text" id="recherche" placeholder="Recherche rapide..." />
-      <div id="userCount">0 Connecté(e).</div>
     </div>
 
     <!-- Zone pour afficher le mot recherché -->
@@ -458,7 +461,7 @@
     const listeNotesDiv  = document.getElementById("liste-notes");
     const mainContent    = document.getElementById("mainContent");
     const headerTitle    = document.getElementById("headerTitle");
-    const userCountDiv   = document.getElementById("userCount");
+    const userCountHeader = document.getElementById("userCountHeader");
 
     const modalOverlay      = document.getElementById("modalOverlay");
     const confirmDeleteBtn  = document.getElementById("confirmDelete");
@@ -719,172 +722,4 @@
           timestamp: serverTimestamp()
         });
       } catch (err) {
-        console.error("Erreur création utilisateur :", err);
-      }
-    }
-
-    // Supprimer un document utilisateur selon son nom
-    async function supprimerUtilisateurParNom(nom) {
-      const qUser = query(usersCollection, where("name", "==", nom));
-      const snapshot = await getDocs(qUser);
-      for (const docSnap of snapshot.docs) {
-        await deleteDoc(doc(db, "users", docSnap.id));
-      }
-    }
-
-    // Enregistrer la présence dans Firestore
-    async function enregistrerPresence() {
-      if (!userName) return;
-      await setDoc(doc(db, "presence", userName), {
-        lastActive: serverTimestamp()
-      });
-    }
-
-    // Supprimer la présence Firestore à la fermeture
-    async function retirerPresence() {
-      if (!userName) return;
-      await deleteDoc(doc(db, "presence", userName));
-    }
-
-    // Mettre à jour le compteur d’utilisateurs en ligne
-    function mettreAJourCompteurPresence(snapshot) {
-      const count = snapshot.size;
-      userCountDiv.textContent = `${count} Connecté(e).`;
-    }
-
-    // Écoute en temps réel de la collection 'presence'
-    onSnapshot(presenceCollection, (snapshot) => {
-      mettreAJourCompteurPresence(snapshot);
-    });
-
-    // Gérer la saisie du nom au chargement
-    async function demanderNomUtilisateur() {
-      // Si un nom est déjà stocké en localStorage, on l’utilise
-      const stocke = localStorage.getItem("userName");
-      if (stocke) {
-        userName = stocke;
-        document.title = userName;
-        headerTitle.textContent = userName;
-        modalNameOverlay.style.display = "none";
-        mainContent.classList.add("active");
-
-        // Créer présence dès que le nom est chargé
-        await enregistrerPresence();
-        return;
-      }
-
-      // Sinon, on affiche le modal
-      modalNameOverlay.style.display = "flex";
-      inputUserName.value = "";
-
-      return new Promise((resolve) => {
-        okNameBtn.onclick = async () => {
-          const nomEntre = inputUserName.value.trim();
-          if (nomEntre !== "") {
-            const existe = await nomExiste(nomEntre);
-            if (existe) {
-              alert("Ce nom est déjà utilisé, veuillez en choisir un autre.");
-              return;
-            }
-            userName = nomEntre;
-          } else {
-            // Si champ vide, on génère
-            const alea = randomLetters(4);
-            userName = "utilisateur" + alea;
-          }
-
-          // Enregistrer et fermer modal
-          localStorage.setItem("userName", userName);
-          await creerUtilisateur(userName);
-          document.title = userName;
-          headerTitle.textContent = userName;
-          modalNameOverlay.style.display = "none";
-          mainContent.classList.add("active");
-          await enregistrerPresence();
-          resolve();
-        };
-
-        cancelNameBtn.onclick = async () => {
-          // Utilisateur refuse → on génère
-          const alea = randomLetters(4);
-          userName = "utilisateur" + alea;
-          localStorage.setItem("userName", userName);
-          await creerUtilisateur(userName);
-          document.title = userName;
-          headerTitle.textContent = userName;
-          modalNameOverlay.style.display = "none";
-          mainContent.classList.add("active");
-          await enregistrerPresence();
-          resolve();
-        };
-      });
-    }
-
-    // Ouvrir le modal de modification de nom
-    headerTitle.addEventListener("click", () => {
-      inputEditUserName.value = userName;
-      modalEditOverlay.style.display = "flex";
-    });
-
-    // Gérer la modification du nom
-    okEditNameBtn.onclick = async () => {
-      const nouveauNom = inputEditUserName.value.trim();
-      if (!nouveauNom) {
-        alert("Le nom ne peut pas être vide.");
-        return;
-      }
-      if (nouveauNom === userName) {
-        modalEditOverlay.style.display = "none";
-        return;
-      }
-      const existe = await nomExiste(nouveauNom);
-      if (existe) {
-        alert("Ce nom est déjà utilisé, veuillez en choisir un autre.");
-        return;
-      }
-      // On met à jour localStorage et Firestore
-      const ancienNom = userName;
-      userName = nouveauNom;
-      localStorage.setItem("userName", userName);
-      await creerUtilisateur(userName);
-      document.title = userName;
-      headerTitle.textContent = userName;
-
-      // Mettre à jour le champ 'auteur' des notes existantes
-      const qUpdate = query(notesCollection, where("auteur", "==", ancienNom));
-      const snapshotUpdate = await getDocs(qUpdate);
-      for (const docSnapshot of snapshotUpdate.docs) {
-        await updateDoc(doc(db, "notes", docSnapshot.id), { auteur: userName });
-      }
-
-      // Supprimer l’ancien nom dans la collection 'users'
-      await supprimerUtilisateurParNom(ancienNom);
-
-      // Mettre à jour présence Firestore : supprimer ancienne doc, créer nouvelle
-      await retirerPresence();
-      await enregistrerPresence();
-
-      modalEditOverlay.style.display = "none";
-    };
-
-    cancelEditNameBtn.onclick = () => {
-      modalEditOverlay.style.display = "none";
-    };
-    modalEditOverlay.onclick = (e) => {
-      if (e.target === modalEditOverlay) {
-        modalEditOverlay.style.display = "none";
-      }
-    };
-
-    // À la fermeture de la page, on retire la présence
-    window.addEventListener("beforeunload", async () => {
-      await retirerPresence();
-    });
-
-    // Au chargement de la page, demander le nom avant toute interaction
-    window.addEventListener("DOMContentLoaded", async () => {
-      await demanderNomUtilisateur();
-    });
-  </script>
-</body>
-</html>
+        console.error("Erreur création utilisateur :", err);```
