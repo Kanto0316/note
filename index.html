@@ -69,7 +69,7 @@
       cursor: pointer;
     }
 
-    /* Container de recherche et compteur */
+    /* Container de recherche + compteur */
     .search-container {
       display: flex;
       flex-direction: column;
@@ -420,6 +420,7 @@
       deleteDoc,
       updateDoc,
       doc,
+      setDoc,
       onSnapshot,
       orderBy,
       query,
@@ -445,8 +446,9 @@
     const db = getFirestore(app);
 
     // Références des collections
-    const notesCollection = collection(db, "notes");
-    const usersCollection = collection(db, "users");
+    const notesCollection    = collection(db, "notes");
+    const usersCollection    = collection(db, "users");
+    const presenceCollection = collection(db, "presence");
 
     // Éléments DOM
     const textarea       = document.getElementById("texte");
@@ -458,9 +460,9 @@
     const headerTitle    = document.getElementById("headerTitle");
     const userCountDiv   = document.getElementById("userCount");
 
-    const modalOverlay   = document.getElementById("modalOverlay");
-    const confirmDeleteBtn = document.getElementById("confirmDelete");
-    const cancelDeleteBtn  = document.getElementById("cancelDelete");
+    const modalOverlay      = document.getElementById("modalOverlay");
+    const confirmDeleteBtn  = document.getElementById("confirmDelete");
+    const cancelDeleteBtn   = document.getElementById("cancelDelete");
 
     const modalNameOverlay  = document.getElementById("modalNameOverlay");
     const inputUserName     = document.getElementById("inputUserName");
@@ -730,15 +732,29 @@
       }
     }
 
-    // Mettre à jour le compteur d’utilisateurs connectés
-    function mettreAJourCompteur(snapshot) {
+    // Enregistrer la présence dans Firestore
+    async function enregistrerPresence() {
+      if (!userName) return;
+      await setDoc(doc(db, "presence", userName), {
+        lastActive: serverTimestamp()
+      });
+    }
+
+    // Supprimer la présence Firestore à la fermeture
+    async function retirerPresence() {
+      if (!userName) return;
+      await deleteDoc(doc(db, "presence", userName));
+    }
+
+    // Mettre à jour le compteur d’utilisateurs en ligne
+    function mettreAJourCompteurPresence(snapshot) {
       const count = snapshot.size;
       userCountDiv.textContent = `${count} Connecté(e).`;
     }
 
-    // Écoute en temps réel de la collection 'users' pour le compteur
-    onSnapshot(usersCollection, (snapshot) => {
-      mettreAJourCompteur(snapshot);
+    // Écoute en temps réel de la collection 'presence'
+    onSnapshot(presenceCollection, (snapshot) => {
+      mettreAJourCompteurPresence(snapshot);
     });
 
     // Gérer la saisie du nom au chargement
@@ -751,6 +767,9 @@
         headerTitle.textContent = userName;
         modalNameOverlay.style.display = "none";
         mainContent.classList.add("active");
+
+        // Créer présence dès que le nom est chargé
+        await enregistrerPresence();
         return;
       }
 
@@ -781,6 +800,7 @@
           headerTitle.textContent = userName;
           modalNameOverlay.style.display = "none";
           mainContent.classList.add("active");
+          await enregistrerPresence();
           resolve();
         };
 
@@ -794,6 +814,7 @@
           headerTitle.textContent = userName;
           modalNameOverlay.style.display = "none";
           mainContent.classList.add("active");
+          await enregistrerPresence();
           resolve();
         };
       });
@@ -839,6 +860,10 @@
       // Supprimer l’ancien nom dans la collection 'users'
       await supprimerUtilisateurParNom(ancienNom);
 
+      // Mettre à jour présence Firestore : supprimer ancienne doc, créer nouvelle
+      await retirerPresence();
+      await enregistrerPresence();
+
       modalEditOverlay.style.display = "none";
     };
 
@@ -850,6 +875,11 @@
         modalEditOverlay.style.display = "none";
       }
     };
+
+    // À la fermeture de la page, on retire la présence
+    window.addEventListener("beforeunload", async () => {
+      await retirerPresence();
+    });
 
     // Au chargement de la page, demander le nom avant toute interaction
     window.addEventListener("DOMContentLoaded", async () => {
