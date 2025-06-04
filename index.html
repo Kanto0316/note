@@ -91,11 +91,10 @@
       padding: 0.5rem;
       position: relative;
       white-space: pre-wrap;
-      cursor: pointer;
-      transition: background-color 0.2s;
+      /* on laisse le curseur par défaut ici, c’est le paragraphe qui sera cliquable */
     }
     .note:hover {
-      background-color: #f0f0f0;
+      background-color: #f9f9f9;
     }
     .note:last-child {
       border-bottom: none;
@@ -342,20 +341,20 @@
         const parag = document.createElement("p");
         parag.textContent = note.contenu;
         parag.style.margin = "0";
+        // Ajouter l'écouteur d'édition sur ce paragraphe uniquement
+        parag.style.cursor = "pointer";
+        parag.onclick = () => {
+          passerEnModeEdition(divNote, note);
+        };
 
         // Bouton supprimer
         const btnSupprimer = document.createElement("button");
         btnSupprimer.className = "supprimer";
         btnSupprimer.innerHTML = "&times;";
         btnSupprimer.onclick = (e) => {
-          e.stopPropagation(); // Empêche le déclenchement de l’édition
+          e.stopPropagation(); // Empêche le clic d'aller sur parag
           idNoteToDelete = note.id;
           modalOverlay.style.display = "flex";
-        };
-
-        // Au clic sur la note (hors icône supprimer), passer en mode édition inline
-        divNote.onclick = () => {
-          passerEnModeEdition(divNote, note);
         };
 
         divNote.appendChild(parag);
@@ -374,6 +373,11 @@
       textareaEdit.className = "edit-area";
       textareaEdit.value = note.contenu;
       textareaEdit.rows = 3;
+
+      // Donner le focus au textarea dès qu’il est ajouté au DOM
+      setTimeout(() => {
+        textareaEdit.focus();
+      }, 0);
 
       // Boutons Sauvegarder et Annuler
       const buttonsDiv = document.createElement("div");
