@@ -7,6 +7,7 @@
 
   <!-- ========== Style CSS inline ========== -->
   <style>
+    /* Styles généraux */
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -29,6 +30,16 @@
       flex-direction: column;
       padding: 1rem;
     }
+    footer {
+      text-align: center;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+      color: #666;
+      background-color: #ecf0f1;
+      margin-top: auto;
+    }
+
+    /* Zone d’ajout de note */
     #nouveau-note {
       display: flex;
       margin-bottom: 0.5rem;
@@ -50,6 +61,7 @@
       border-radius: 0 4px 4px 0;
       cursor: pointer;
     }
+
     /* Champ de recherche */
     #recherche {
       width: 100%;
@@ -66,6 +78,8 @@
       margin-bottom: 0.75rem;
       min-height: 1.2rem;
     }
+
+    /* Liste des notes (multiligne) */
     #liste-notes {
       background-color: #fff;
       border: 1px solid #ddd;
@@ -76,7 +90,12 @@
       border-bottom: 1px solid #eee;
       padding: 0.5rem;
       position: relative;
-      white-space: pre-wrap; /* conserver les retours à la ligne */
+      white-space: pre-wrap;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .note:hover {
+      background-color: #f0f0f0;
     }
     .note:last-child {
       border-bottom: none;
@@ -90,14 +109,88 @@
       color: #c0392b;
       font-size: 1.2rem;
       cursor: pointer;
+      z-index: 2;
     }
-    footer {
-      text-align: center;
+
+    /* Styles pour l’édition inline */
+    .edit-area {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 1rem;
       padding: 0.5rem;
-      font-size: 0.9rem;
-      color: #666;
-      background-color: #ecf0f1;
-      margin-top: auto;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+      margin-bottom: 0.5rem;
+    }
+    .edit-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .btn-save {
+      background-color: #2980b9;
+      color: #fff;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-cancel {
+      background-color: #7f8c8d;
+      color: #fff;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    /* Modal de confirmation */
+    #modalOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+    #modalContent {
+      background-color: #fff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      max-width: 90%;
+      width: 300px;
+      text-align: center;
+    }
+    #modalContent h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 1rem;
+    }
+    .modal-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .modal-btn.yes {
+      background-color: #c0392b;
+      color: #fff;
+    }
+    .modal-btn.no {
+      background-color: #7f8c8d;
+      color: #fff;
     }
   </style>
 </head>
@@ -124,6 +217,17 @@
     </div>
   </main>
 
+  <!-- Modal de confirmation de suppression -->
+  <div id="modalOverlay">
+    <div id="modalContent">
+      <h2>Voulez-vous supprimer cet élément&nbsp;?</h2>
+      <div class="modal-buttons">
+        <button class="modal-btn yes" id="confirmDelete">Oui</button>
+        <button class="modal-btn no" id="cancelDelete">Non</button>
+      </div>
+    </div>
+  </div>
+
   <footer>Les notes sont stockées en temps réel dans Firestore.</footer>
 
   <!-- ========== Scripts Firebase (modulaire) + JS inline ========== -->
@@ -136,6 +240,7 @@
       collection,
       addDoc,
       deleteDoc,
+      updateDoc,
       doc,
       onSnapshot,
       orderBy,
@@ -156,7 +261,7 @@
 
     // 3) Initialiser Firebase et les services Analytics + Firestore
     const app = initializeApp(firebaseConfig);
-    const analytics = getAnalytics(app);
+    getAnalytics(app);
     const db = getFirestore(app);
 
     // 4) Référence vers la collection "notes" dans Firestore
@@ -168,6 +273,13 @@
     const inputRecherche = document.getElementById("recherche");
     const etatRechercheDiv = document.getElementById("etatRecherche");
     const listeNotesDiv = document.getElementById("liste-notes");
+
+    const modalOverlay = document.getElementById("modalOverlay");
+    const confirmDeleteBtn = document.getElementById("confirmDelete");
+    const cancelDeleteBtn = document.getElementById("cancelDelete");
+
+    // Variables pour gérer la suppression
+    let idNoteToDelete = null;
 
     // Tableau local pour stocker les notes reçues
     let notesLocales = [];
@@ -193,7 +305,18 @@
       }
     }
 
-    // 8) Fonction pour réafficher les notes selon le filtre de recherche
+    // 8) Fonction pour mettre à jour le contenu d’une note (édition)
+    async function modifierNoteDansFirestore(idDoc, nouveauTexte) {
+      try {
+        await updateDoc(doc(db, "notes", idDoc), {
+          contenu: nouveauTexte
+        });
+      } catch (err) {
+        console.error("Erreur modification note :", err);
+      }
+    }
+
+    // 9) Fonction pour réafficher les notes selon le filtre de recherche
     function renderNotes() {
       const filtre = inputRecherche.value.trim().toLowerCase();
       listeNotesDiv.innerHTML = "";
@@ -205,35 +328,86 @@
         etatRechercheDiv.textContent = "";
       }
 
-      for (const note of notesLocales) {
-        // Si la recherche n’est pas vide, on filtre le contenu
+      notesLocales.forEach((note) => {
+        // Filtrer par contenu si nécessaire
         if (filtre && !note.contenu.toLowerCase().includes(filtre)) {
-          continue;
+          return;
         }
 
         // Créer l’élément HTML pour cette note
         const divNote = document.createElement("div");
         divNote.className = "note";
 
+        // Paragraphe qui affiche le contenu
         const parag = document.createElement("p");
         parag.textContent = note.contenu;
+        parag.style.margin = "0";
 
+        // Bouton supprimer
         const btnSupprimer = document.createElement("button");
         btnSupprimer.className = "supprimer";
         btnSupprimer.innerHTML = "&times;";
-        btnSupprimer.onclick = () => {
-          if (confirm("Supprimer cette note ?")) {
-            supprimerNoteDansFirestore(note.id);
-          }
+        btnSupprimer.onclick = (e) => {
+          e.stopPropagation(); // Empêche le déclenchement de l’édition
+          idNoteToDelete = note.id;
+          modalOverlay.style.display = "flex";
+        };
+
+        // Au clic sur la note (hors icône supprimer), passer en mode édition inline
+        divNote.onclick = () => {
+          passerEnModeEdition(divNote, note);
         };
 
         divNote.appendChild(parag);
         divNote.appendChild(btnSupprimer);
         listeNotesDiv.appendChild(divNote);
-      }
+      });
     }
 
-    // 9) Écoute en temps réel de la collection "notes", triée par dateCreation **descendante**
+    // 10) Fonction pour basculer une note en mode édition inline
+    function passerEnModeEdition(divNote, note) {
+      // Vider le contenu actuel
+      divNote.innerHTML = "";
+
+      // Créer textarea pour modifier le texte
+      const textareaEdit = document.createElement("textarea");
+      textareaEdit.className = "edit-area";
+      textareaEdit.value = note.contenu;
+      textareaEdit.rows = 3;
+
+      // Boutons Sauvegarder et Annuler
+      const buttonsDiv = document.createElement("div");
+      buttonsDiv.className = "edit-buttons";
+
+      const btnSave = document.createElement("button");
+      btnSave.className = "btn-save";
+      btnSave.textContent = "Sauvegarder";
+      btnSave.onclick = (e) => {
+        e.stopPropagation();
+        const nouveauTexte = textareaEdit.value.trim();
+        if (nouveauTexte === "") {
+          alert("Le contenu ne peut pas être vide.");
+          return;
+        }
+        modifierNoteDansFirestore(note.id, nouveauTexte);
+      };
+
+      const btnCancel = document.createElement("button");
+      btnCancel.className = "btn-cancel";
+      btnCancel.textContent = "Annuler";
+      btnCancel.onclick = (e) => {
+        e.stopPropagation();
+        renderNotes();
+      };
+
+      buttonsDiv.appendChild(btnSave);
+      buttonsDiv.appendChild(btnCancel);
+
+      divNote.appendChild(textareaEdit);
+      divNote.appendChild(buttonsDiv);
+    }
+
+    // 11) Écoute en temps réel de la collection "notes", triée par dateCreation descendante
     const q = query(notesCollection, orderBy("dateCreation", "desc"));
     onSnapshot(q, (snapshot) => {
       notesLocales = []; // Réinitialiser le tableau local
@@ -251,7 +425,7 @@
       console.error("Erreur écoute Firestore :", err);
     });
 
-    // 10) Gestion du clic sur “Ajouter”
+    // 12) Gestion du clic sur “Ajouter”
     btnAjouter.addEventListener("click", () => {
       const texte = textarea.value.trim();
       if (texte === "") {
@@ -263,15 +437,35 @@
       textarea.focus();
     });
 
-    // 11) Envoi par Ctrl+Entrée (optionnel)
+    // 13) Envoi par Ctrl+Entrée (optionnel)
     textarea.addEventListener("keydown", (e) => {
       if (e.ctrlKey && e.key === "Enter") {
         btnAjouter.click();
       }
     });
 
-    // 12) Réagir au champ de recherche : à chaque saisie, rafraîchir l’affichage
+    // 14) Réagir au champ de recherche : à chaque saisie, rafraîchir l’affichage
     inputRecherche.addEventListener("input", renderNotes);
+
+    // 15) Gestion du modal de suppression
+    confirmDeleteBtn.onclick = () => {
+      if (idNoteToDelete) {
+        supprimerNoteDansFirestore(idNoteToDelete);
+        idNoteToDelete = null;
+      }
+      modalOverlay.style.display = "none";
+    };
+    cancelDeleteBtn.onclick = () => {
+      idNoteToDelete = null;
+      modalOverlay.style.display = "none";
+    };
+    // Cliquer en-dehors du contenu ferme aussi le modal
+    modalOverlay.onclick = (e) => {
+      if (e.target === modalOverlay) {
+        idNoteToDelete = null;
+        modalOverlay.style.display = "none";
+      }
+    };
   </script>
 </body>
 </html>
