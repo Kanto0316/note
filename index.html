@@ -18,7 +18,7 @@
       min-height: 100vh;
     }
     header {
-      background-color: #2c3e50; /* couleur du header */
+      background-color: #2c3e50;
       color: #fff;
       padding: 1rem;
       text-align: center;
@@ -95,16 +95,14 @@
     .note {
       padding: 0.5rem;
       position: relative;
-      white-space: pre-wrap;        /* conserve sauts de ligne */
-      word-break: break-word;       /* autorise retour à la ligne pour mots longs */
+      white-space: pre-wrap;    /* conserve sauts de ligne */
+      word-break: break-word;   /* retour à la ligne pour mots longs */
       cursor: default;
-      /* Divider vert : bordure inférieure */
-      border-bottom: 2px solid #27ae60;
+      border-bottom: 2px solid #27ae60; /* séparation verte */
       margin-bottom: 0.5rem;
-      padding-bottom: 1.5rem;       /* espace pour la date en bas */
+      padding-bottom: 1.5rem;   /* espace pour la date et l’auteur */
     }
     .note:last-child {
-      /* pas de bordure ni marge pour la dernière note */
       border-bottom: none;
       margin-bottom: 0;
       padding-bottom: 0.5rem;
@@ -127,6 +125,13 @@
       font-size: 0.8rem;
       color: #555;
     }
+    .auteur {
+      position: absolute;
+      bottom: 0.5rem;
+      left: 0.5rem;
+      font-size: 0.8rem;
+      color: #333;
+    }
 
     /* Style pour le terme surligné */
     .highlight {
@@ -143,7 +148,7 @@
       border-radius: 4px;
       resize: vertical;
       margin-bottom: 0.5rem;
-      min-height: 80px; /* Hauteur minimale accrue pour téléphone */
+      min-height: 80px; /* hauteur confortable sur mobile */
       word-break: break-word;
     }
     .edit-buttons {
@@ -216,7 +221,7 @@
       color: #fff;
     }
 
-    /* Modal de saisie du nom */
+    /* Modal de saisie du nom d’utilisateur */
     #modalNameOverlay {
       position: fixed;
       top: 0;
@@ -275,7 +280,7 @@
 </head>
 <body>
 
-  <header>Bloc-note collaboratif</header>
+  <header id="headerTitle">Bloc-note collaboratif</header>
 
   <main id="mainContent">
     <!-- Zone de saisie pour une nouvelle note -->
@@ -367,6 +372,7 @@
     const etatRechercheDiv = document.getElementById("etatRecherche");
     const listeNotesDiv = document.getElementById("liste-notes");
     const mainContent = document.getElementById("mainContent");
+    const headerTitle = document.getElementById("headerTitle");
 
     const modalOverlay = document.getElementById("modalOverlay");
     const confirmDeleteBtn = document.getElementById("confirmDelete");
@@ -404,7 +410,8 @@
       });
     }
 
-    // Afficher les notes, avec séparation verte, date et auteur
+    // Afficher les notes, avec séparation verte, date et auteur,
+    // et n’autoriser la suppression qu’aux propres notes
     function renderNotes() {
       const filtre = inputRecherche.value.trim().toLowerCase();
       listeNotesDiv.innerHTML = "";
@@ -416,7 +423,6 @@
       }
 
       notesLocales.forEach((note) => {
-        // Filtrer
         if (filtre && !note.contenu.toLowerCase().includes(filtre)) {
           return;
         }
@@ -444,15 +450,18 @@
           passerEnModeEdition(divNote, note);
         };
 
-        // Bouton supprimer
-        const btnSupprimer = document.createElement("button");
-        btnSupprimer.className = "supprimer";
-        btnSupprimer.innerHTML = "&times;";
-        btnSupprimer.onclick = (e) => {
-          e.stopPropagation();
-          idNoteToDelete = note.id;
-          modalOverlay.style.display = "flex";
-        };
+        // Si l’auteur est l’utilisateur courant, on affiche le bouton supprimer
+        if (note.auteur === userName) {
+          const btnSupprimer = document.createElement("button");
+          btnSupprimer.className = "supprimer";
+          btnSupprimer.innerHTML = "&times;";
+          btnSupprimer.onclick = (e) => {
+            e.stopPropagation();
+            idNoteToDelete = note.id;
+            modalOverlay.style.display = "flex";
+          };
+          divNote.appendChild(btnSupprimer);
+        }
 
         // Date de modification
         const spanDate = document.createElement("div");
@@ -461,15 +470,10 @@
 
         // Auteur
         const spanUser = document.createElement("div");
-        spanUser.style.position = "absolute";
-        spanUser.style.bottom = "0.5rem";
-        spanUser.style.left = "0.5rem";
-        spanUser.style.fontSize = "0.8rem";
-        spanUser.style.color = "#333";
+        spanUser.className = "auteur";
         spanUser.textContent = note.auteur || "Inconnu";
 
         divNote.appendChild(parag);
-        divNote.appendChild(btnSupprimer);
         divNote.appendChild(spanDate);
         divNote.appendChild(spanUser);
         listeNotesDiv.appendChild(divNote);
@@ -478,6 +482,9 @@
 
     // Passer en mode édition inline
     function passerEnModeEdition(divNote, note) {
+      // N’autoriser l’édition que si l’utilisateur est l’auteur
+      if (note.auteur !== userName) return;
+
       divNote.innerHTML = "";
 
       const textareaEdit = document.createElement("textarea");
@@ -627,6 +634,17 @@
 
     // Gérer la saisie du nom au chargement
     async function demanderNomUtilisateur() {
+      // Si un nom est déjà stocké en localStorage, on l’utilise
+      const stocke = localStorage.getItem("userName");
+      if (stocke) {
+        userName = stocke;
+        document.title = userName;
+        headerTitle.textContent = userName;
+        mainContent.classList.add("active");
+        return;
+      }
+
+      // Sinon, on affiche le modal
       modalNameOverlay.style.display = "flex";
       inputUserName.value = "";
 
@@ -640,26 +658,30 @@
               return;
             }
             userName = nomEntre;
-            await creerUtilisateur(userName);
-            modalNameOverlay.style.display = "none";
-            mainContent.classList.add("active");
-            resolve();
           } else {
-            // Si champ vide, on force génération
+            // Si champ vide, on génère
             const alea = randomLetters(4);
             userName = "utilisateur" + alea;
-            await creerUtilisateur(userName);
-            modalNameOverlay.style.display = "none";
-            mainContent.classList.add("active");
-            resolve();
           }
+
+          // Enregistrer et fermer modal
+          localStorage.setItem("userName", userName);
+          await creerUtilisateur(userName);
+          document.title = userName;
+          headerTitle.textContent = userName;
+          modalNameOverlay.style.display = "none";
+          mainContent.classList.add("active");
+          resolve();
         };
 
         cancelNameBtn.onclick = async () => {
           // Utilisateur refuse : on génère
           const alea = randomLetters(4);
           userName = "utilisateur" + alea;
+          localStorage.setItem("userName", userName);
           await creerUtilisateur(userName);
+          document.title = userName;
+          headerTitle.textContent = userName;
           modalNameOverlay.style.display = "none";
           mainContent.classList.add("active");
           resolve();
