@@ -122,7 +122,7 @@
       border-radius: 4px;
       resize: vertical;
       margin-bottom: 0.5rem;
-      min-height: 80px; /* Hauteur minimale augmentée pour téléphone */
+      min-height: 80px; /* Hauteur minimale accrue pour téléphone */
     }
     .edit-buttons {
       display: flex;
@@ -430,7 +430,7 @@
       console.error("Erreur écoute Firestore :", err);
     });
 
-    // 12) Gestion du clic sur “Ajouter”
+    // 12) Gestion du clic sur “Ajouter” (bouton)
     btnAjouter.addEventListener("click", () => {
       const texte = textarea.value.trim();
       if (texte === "") {
@@ -442,9 +442,12 @@
       textarea.focus();
     });
 
-    // 13) Envoi par Ctrl+Entrée (optionnel)
+    // 13) Gestion du press Enter dans la zone d’ajout : ajout immédiat
     textarea.addEventListener("keydown", (e) => {
-      if (e.ctrlKey && e.key === "Enter") {
+      // Si la touche est "Enter" sans Shift (pour éviter les sauts de ligne),
+      // on empêche l’insertion d’une nouvelle ligne et on déclenche l’ajout.
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
         btnAjouter.click();
       }
     });
