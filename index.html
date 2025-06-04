@@ -358,13 +358,13 @@
   <main id="mainContent">
     <!-- Zone de saisie pour une nouvelle note -->
     <div id="nouveau-note">
-      <textarea id="texte" rows="2" placeholder="Écrivez ici..."></textarea>
+      <textarea id="texte" rows="2" placeholder="Écrivez ici…"></textarea>
       <button id="btnAjouter">Ajouter</button>
     </div>
 
     <!-- Container recherche -->
     <div class="search-container">
-      <input type="text" id="recherche" placeholder="Recherche rapide..." />
+      <input type="text" id="recherche" placeholder="Recherche rapide…" />
     </div>
 
     <!-- Zone pour afficher le mot recherché -->
@@ -391,7 +391,7 @@
   <div id="modalNameOverlay">
     <div id="modalNameContent">
       <h2>Entrer votre nom</h2>
-      <input type="text" id="inputUserName" placeholder="Votre nom..." maxlength="20" />
+      <input type="text" id="inputUserName" placeholder="Votre nom…" maxlength="20" />
       <div class="modal-buttons">
         <button class="modal-btn ok" id="okName">OK</button>
         <button class="modal-btn cancel" id="cancelName">Annuler</button>
@@ -768,6 +768,7 @@
       if (stocke) {
         userName = stocke;
         document.title = userName;
+        // Mettre à jour le texte principal du header sans écraser le compteur
         headerTitle.childNodes[0].textContent = userName;
         modalNameOverlay.style.display = "none";
         mainContent.classList.add("active");
@@ -880,8 +881,8 @@
       }
     };
 
-    // À la fermeture de la page, on retire la présence
-    window.addEventListener("beforeunload", async () => {
+    // À la fermeture ou navigation hors de la page, on retire la présence
+    window.addEventListener("unload", async () => {
       await retirerPresence();
     });
 
