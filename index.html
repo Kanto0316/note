@@ -14,7 +14,6 @@
       background-color: #f7f7f7;
       display: flex;
       flex-direction: column;
-      /* On enlève la hauteur fixe pour éviter tout scroll interne */
       min-height: 100vh;
     }
     header {
@@ -65,10 +64,9 @@
       font-size: 0.9rem;
       color: #333;
       margin-bottom: 0.75rem;
-      min-height: 1.2rem; /* réserve de l'espace même si vide */
+      min-height: 1.2rem;
     }
     #liste-notes {
-      /* On supprime overflow-y pour que ce soit multiligne et page qui défile */
       background-color: #fff;
       border: 1px solid #ddd;
       border-radius: 4px;
@@ -78,7 +76,7 @@
       border-bottom: 1px solid #eee;
       padding: 0.5rem;
       position: relative;
-      white-space: pre-wrap; /* conservez les sauts de ligne des notes */
+      white-space: pre-wrap; /* conserver les retours à la ligne */
     }
     .note:last-child {
       border-bottom: none;
@@ -200,7 +198,7 @@
       const filtre = inputRecherche.value.trim().toLowerCase();
       listeNotesDiv.innerHTML = "";
 
-      // Afficher le mot recherché (ou vide)
+      // Afficher le mot recherché (ou rien)
       if (filtre) {
         etatRechercheDiv.textContent = `Résultats pour : “${filtre}”`;
       } else {
@@ -235,8 +233,8 @@
       }
     }
 
-    // 9) Écoute en temps réel de la collection "notes", triée par dateCreation croissante
-    const q = query(notesCollection, orderBy("dateCreation"));
+    // 9) Écoute en temps réel de la collection "notes", triée par dateCreation **descendante**
+    const q = query(notesCollection, orderBy("dateCreation", "desc"));
     onSnapshot(q, (snapshot) => {
       notesLocales = []; // Réinitialiser le tableau local
 
