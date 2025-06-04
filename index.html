@@ -89,7 +89,8 @@
     .note {
       padding: 0.5rem;
       position: relative;
-      white-space: pre-wrap;
+      white-space: pre-wrap;        /* conserve sauts de ligne */
+      word-break: break-word;       /* autorise le retour à la ligne sur mot trop long */
       cursor: default;
       /* Divider coloré : bordure inférieure de la même couleur que le header */
       border-bottom: 2px solid #2c3e50;
@@ -112,6 +113,11 @@
       z-index: 2;
     }
 
+    /* Style pour le terme surligné */
+    .highlight {
+      background-color: yellow;
+    }
+
     /* Styles pour l’édition inline */
     .edit-area {
       width: 100%;
@@ -123,6 +129,7 @@
       resize: vertical;
       margin-bottom: 0.5rem;
       min-height: 80px; /* Hauteur minimale accrue pour téléphone */
+      word-break: break-word;
     }
     .edit-buttons {
       display: flex;
@@ -339,12 +346,26 @@
         const divNote = document.createElement("div");
         divNote.className = "note";
 
-        // Paragraphe qui affiche le contenu
+        // Paragraphe qui affiche le contenu avec surlignage du filtre
         const parag = document.createElement("p");
-        parag.textContent = note.contenu;
         parag.style.margin = "0";
-        // Ajouter l'écouteur d'édition sur ce paragraphe uniquement
         parag.style.cursor = "pointer";
+
+        // Si un filtre est présent, on remplace les occurrences par une span surlignée
+        if (filtre) {
+          // Échapper le filtre pour l'utiliser en RegExp
+          const escapedFiltre = filtre.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          const regex = new RegExp(`(${escapedFiltre})`, 'gi');
+          const contenuSurligne = note.contenu.replace(
+            regex,
+            '<span class="highlight">$1</span>'
+          );
+          parag.innerHTML = contenuSurligne;
+        } else {
+          parag.textContent = note.contenu;
+        }
+
+        // Au clic sur le paragraphe, passer en mode édition
         parag.onclick = () => {
           passerEnModeEdition(divNote, note);
         };
@@ -374,7 +395,8 @@
       const textareaEdit = document.createElement("textarea");
       textareaEdit.className = "edit-area";
       textareaEdit.value = note.contenu;
-      textareaEdit.rows = 5; // on peut aussi augmenter le nombre de lignes initiales
+      textareaEdit.rows = 5;
+
       // Donner le focus au textarea dès qu’il est ajouté au DOM
       setTimeout(() => {
         textareaEdit.focus();
@@ -442,20 +464,10 @@
       textarea.focus();
     });
 
-    // 13) Gestion du press Enter dans la zone d’ajout : ajout immédiat
-    textarea.addEventListener("keydown", (e) => {
-      // Si la touche est "Enter" sans Shift (pour éviter les sauts de ligne),
-      // on empêche l’insertion d’une nouvelle ligne et on déclenche l’ajout.
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        btnAjouter.click();
-      }
-    });
-
-    // 14) Réagir au champ de recherche : à chaque saisie, rafraîchir l’affichage
+    // 13) Réagir au champ de recherche : à chaque saisie, rafraîchir l’affichage
     inputRecherche.addEventListener("input", renderNotes);
 
-    // 15) Gestion du modal de suppression
+    // 14) Gestion du modal de suppression
     confirmDeleteBtn.onclick = () => {
       if (idNoteToDelete) {
         supprimerNoteDansFirestore(idNoteToDelete);
