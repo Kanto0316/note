@@ -669,18 +669,18 @@
     inputRecherche.addEventListener("input", renderNotes);
 
     // Gestion du modal de suppression
-    confirmDeleteBtn.onclick = () => {
+    confirmDeleteBtn.onclick = () =&gt; {
       if (idNoteToDelete) {
         supprimerNoteDansFirestore(idNoteToDelete);
         idNoteToDelete = null;
       }
       modalOverlay.style.display = "none";
     };
-    cancelDeleteBtn.onclick = () => {
+    cancelDeleteBtn.onclick = () =&gt; {
       idNoteToDelete = null;
       modalOverlay.style.display = "none";
     };
-    modalOverlay.onclick = (e) => {
+    modalOverlay.onclick = (e) =&gt; {
       if (e.target === modalOverlay) {
         idNoteToDelete = null;
         modalOverlay.style.display = "none";
@@ -724,8 +724,8 @@
       modalNameOverlay.style.display = "flex";
       inputUserName.value = "";
 
-      return new Promise((resolve) => {
-        okNameBtn.onclick = async () => {
+      return new Promise((resolve) =&gt; {
+        okNameBtn.onclick = async () =&gt; {
           const nomEntre = inputUserName.value.trim();
           if (nomEntre !== "") {
             const existe = await nomExiste(nomEntre);
@@ -750,7 +750,7 @@
           resolve();
         };
 
-        cancelNameBtn.onclick = async () => {
+        cancelNameBtn.onclick = async () =&gt; {
           // Utilisateur refuse : on génère
           const alea = randomLetters(4);
           userName = "utilisateur" + alea;
@@ -766,13 +766,13 @@
     }
 
     // Ouvrir le modal de modification de nom
-    headerTitle.addEventListener("click", () => {
+    headerTitle.addEventListener("click", () =&gt; {
       inputEditUserName.value = userName;
       modalEditOverlay.style.display = "flex";
     });
 
     // Gérer la modification du nom
-    okEditNameBtn.onclick = async () => {
+    okEditNameBtn.onclick = async () =&gt; {
       const nouveauNom = inputEditUserName.value.trim();
       if (!nouveauNom) {
         alert("Le nom ne peut pas être vide.");
@@ -788,27 +788,36 @@
         return;
       }
       // On met à jour localStorage et Firestore
+      const ancienNom = userName;
       userName = nouveauNom;
       localStorage.setItem("userName", userName);
       await creerUtilisateur(userName);
       document.title = userName;
       headerTitle.textContent = userName;
+      
+      // Mettre à jour le champ 'auteur' des notes existantes
+      const qUpdate = query(notesCollection, where("auteur", "==", ancienNom));
+      const snapshotUpdate = await getDocs(qUpdate);
+      for (const docSnapshot of snapshotUpdate.docs) {
+        await updateDoc(doc(db, "notes", docSnapshot.id), { auteur: userName });
+      }
+
       modalEditOverlay.style.display = "none";
     };
 
-    cancelEditNameBtn.onclick = () => {
+    cancelEditNameBtn.onclick = () =&gt; {
       modalEditOverlay.style.display = "none";
     };
-    modalEditOverlay.onclick = (e) => {
+    modalEditOverlay.onclick = (e) =&gt; {
       if (e.target === modalEditOverlay) {
         modalEditOverlay.style.display = "none";
       }
     };
 
     // Au chargement de la page, demander le nom avant toute interaction
-    window.addEventListener("DOMContentLoaded", async () => {
+    window.addEventListener("DOMContentLoaded", async () =&gt; {
       await demanderNomUtilisateur();
     });
-  </script>
-</body>
-</html>
+  &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
