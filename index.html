@@ -29,6 +29,12 @@
       display: flex;
       flex-direction: column;
       padding: 1rem;
+      opacity: 0.5; /* désactiver l’interaction avant saisie du nom */
+      pointer-events: none;
+    }
+    main.active {
+      opacity: 1;
+      pointer-events: auto;
     }
     footer {
       text-align: center;
@@ -209,13 +215,69 @@
       background-color: #7f8c8d;
       color: #fff;
     }
+
+    /* Modal de saisie du nom */
+    #modalNameOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+    }
+    #modalNameContent {
+      background-color: #fff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      max-width: 90%;
+      width: 300px;
+      text-align: center;
+    }
+    #modalNameContent h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    #modalNameContent input {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    #modalNameContent .modal-buttons {
+      display: flex;
+      justify-content: space-around;
+    }
+    #modalNameContent .modal-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #modalNameContent .modal-btn.ok {
+      background-color: #2980b9;
+      color: #fff;
+    }
+    #modalNameContent .modal-btn.cancel {
+      background-color: #7f8c8d;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
 
   <header>Bloc-note collaboratif</header>
 
-  <main>
+  <main id="mainContent">
     <!-- Zone de saisie pour une nouvelle note -->
     <div id="nouveau-note">
       <textarea id="texte" rows="2" placeholder="Écrivez ici..."></textarea>
@@ -245,6 +307,18 @@
     </div>
   </div>
 
+  <!-- Modal de saisie du nom d’utilisateur -->
+  <div id="modalNameOverlay">
+    <div id="modalNameContent">
+      <h2>Entrer votre nom</h2>
+      <input type="text" id="inputUserName" placeholder="Votre nom..." maxlength="20" />
+      <div class="modal-buttons">
+        <button class="modal-btn ok" id="okName">OK</button>
+        <button class="modal-btn cancel" id="cancelName">Annuler</button>
+      </div>
+    </div>
+  </div>
+
   <footer>Les notes sont stockées en temps réel dans Firestore.</footer>
 
   <!-- ========== Scripts Firebase (modulaire) + JS inline ========== -->
@@ -261,6 +335,8 @@
       onSnapshot,
       orderBy,
       query,
+      where,
+      getDocs,
       serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
@@ -280,8 +356,9 @@
     getAnalytics(app);
     const db = getFirestore(app);
 
-    // Référence collection "notes"
+    // Références des collections
     const notesCollection = collection(db, "notes");
+    const usersCollection = collection(db, "users");
 
     // Éléments DOM
     const textarea = document.getElementById("texte");
@@ -289,46 +366,29 @@
     const inputRecherche = document.getElementById("recherche");
     const etatRechercheDiv = document.getElementById("etatRecherche");
     const listeNotesDiv = document.getElementById("liste-notes");
+    const mainContent = document.getElementById("mainContent");
 
     const modalOverlay = document.getElementById("modalOverlay");
     const confirmDeleteBtn = document.getElementById("confirmDelete");
     const cancelDeleteBtn = document.getElementById("cancelDelete");
 
+    const modalNameOverlay = document.getElementById("modalNameOverlay");
+    const inputUserName = document.getElementById("inputUserName");
+    const okNameBtn = document.getElementById("okName");
+    const cancelNameBtn = document.getElementById("cancelName");
+
     let idNoteToDelete = null;
     let notesLocales = [];
+    let userName = "";
 
-    // Ajouter note (avec dateModification initiale)
-    async function ajouterNoteDansFirestore(texte) {
-      try {
-        await addDoc(notesCollection, {
-          contenu: texte,
-          dateCreation: serverTimestamp(),
-          dateModification: serverTimestamp()
-        });
-      } catch (err) {
-        console.error("Erreur ajout note :", err);
+    // Générer 4 lettres aléatoires
+    function randomLetters(n) {
+      let result = "";
+      const chars = "abcdefghijklmnopqrstuvwxyz";
+      for (let i = 0; i < n; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
       }
-    }
-
-    // Supprimer note
-    async function supprimerNoteDansFirestore(idDoc) {
-      try {
-        await deleteDoc(doc(db, "notes", idDoc));
-      } catch (err) {
-        console.error("Erreur suppression :", err);
-      }
-    }
-
-    // Modifier note en ajoutant dateModification
-    async function modifierNoteDansFirestore(idDoc, nouveauTexte) {
-      try {
-        await updateDoc(doc(db, "notes", idDoc), {
-          contenu: nouveauTexte,
-          dateModification: serverTimestamp()
-        });
-      } catch (err) {
-        console.error("Erreur modification note :", err);
-      }
+      return result;
     }
 
     // Formater un Timestamp Firestore en chaîne locale
@@ -344,7 +404,7 @@
       });
     }
 
-    // Afficher les notes, avec séparation verte et date à droite
+    // Afficher les notes, avec séparation verte, date et auteur
     function renderNotes() {
       const filtre = inputRecherche.value.trim().toLowerCase();
       listeNotesDiv.innerHTML = "";
@@ -356,6 +416,7 @@
       }
 
       notesLocales.forEach((note) => {
+        // Filtrer
         if (filtre && !note.contenu.toLowerCase().includes(filtre)) {
           return;
         }
@@ -398,9 +459,19 @@
         spanDate.className = "date-modif";
         spanDate.textContent = formaterDate(note.dateModification);
 
+        // Auteur
+        const spanUser = document.createElement("div");
+        spanUser.style.position = "absolute";
+        spanUser.style.bottom = "0.5rem";
+        spanUser.style.left = "0.5rem";
+        spanUser.style.fontSize = "0.8rem";
+        spanUser.style.color = "#333";
+        spanUser.textContent = note.auteur || "Inconnu";
+
         divNote.appendChild(parag);
         divNote.appendChild(btnSupprimer);
         divNote.appendChild(spanDate);
+        divNote.appendChild(spanUser);
         listeNotesDiv.appendChild(divNote);
       });
     }
@@ -449,15 +520,16 @@
     }
 
     // Écoute Firestore, tri par dateModification descendante
-    const q = query(notesCollection, orderBy("dateModification", "desc"));
-    onSnapshot(q, (snapshot) => {
+    const qNotes = query(notesCollection, orderBy("dateModification", "desc"));
+    onSnapshot(qNotes, (snapshot) => {
       notesLocales = [];
       snapshot.forEach((docSnapshot) => {
         const data = docSnapshot.data();
         notesLocales.push({
           id: docSnapshot.id,
           contenu: data.contenu || "",
-          dateModification: data.dateModification || data.dateCreation
+          dateModification: data.dateModification || data.dateCreation,
+          auteur: data.auteur || "Inconnu"
         });
       });
       renderNotes();
@@ -465,7 +537,42 @@
       console.error("Erreur écoute Firestore :", err);
     });
 
-    // Clic sur “Ajouter”
+    // Ajouter note (avec auteur et dateModification initiale)
+    async function ajouterNoteDansFirestore(texte) {
+      try {
+        await addDoc(notesCollection, {
+          contenu: texte,
+          dateCreation: serverTimestamp(),
+          dateModification: serverTimestamp(),
+          auteur: userName
+        });
+      } catch (err) {
+        console.error("Erreur ajout note :", err);
+      }
+    }
+
+    // Supprimer note
+    async function supprimerNoteDansFirestore(idDoc) {
+      try {
+        await deleteDoc(doc(db, "notes", idDoc));
+      } catch (err) {
+        console.error("Erreur suppression :", err);
+      }
+    }
+
+    // Modifier note (met à jour dateModification)
+    async function modifierNoteDansFirestore(idDoc, nouveauTexte) {
+      try {
+        await updateDoc(doc(db, "notes", idDoc), {
+          contenu: nouveauTexte,
+          dateModification: serverTimestamp()
+        });
+      } catch (err) {
+        console.error("Erreur modification note :", err);
+      }
+    }
+
+    // Gestion du clic sur “Ajouter”
     btnAjouter.addEventListener("click", () => {
       const texte = textarea.value.trim();
       if (texte === "") {
@@ -498,6 +605,72 @@
         modalOverlay.style.display = "none";
       }
     };
+
+    // Fonction pour vérifier si un nom existe déjà
+    async function nomExiste(nom) {
+      const qUser = query(usersCollection, where("name", "==", nom));
+      const querySnapshot = await getDocs(qUser);
+      return !querySnapshot.empty;
+    }
+
+    // Créer un nouvel utilisateur dans Firestore
+    async function creerUtilisateur(nom) {
+      try {
+        await addDoc(usersCollection, {
+          name: nom,
+          timestamp: serverTimestamp()
+        });
+      } catch (err) {
+        console.error("Erreur création utilisateur :", err);
+      }
+    }
+
+    // Gérer la saisie du nom au chargement
+    async function demanderNomUtilisateur() {
+      modalNameOverlay.style.display = "flex";
+      inputUserName.value = "";
+
+      return new Promise((resolve) => {
+        okNameBtn.onclick = async () => {
+          const nomEntre = inputUserName.value.trim();
+          if (nomEntre !== "") {
+            const existe = await nomExiste(nomEntre);
+            if (existe) {
+              alert("Ce nom est déjà utilisé, veuillez en choisir un autre.");
+              return;
+            }
+            userName = nomEntre;
+            await creerUtilisateur(userName);
+            modalNameOverlay.style.display = "none";
+            mainContent.classList.add("active");
+            resolve();
+          } else {
+            // Si champ vide, on force génération
+            const alea = randomLetters(4);
+            userName = "utilisateur" + alea;
+            await creerUtilisateur(userName);
+            modalNameOverlay.style.display = "none";
+            mainContent.classList.add("active");
+            resolve();
+          }
+        };
+
+        cancelNameBtn.onclick = async () => {
+          // Utilisateur refuse : on génère
+          const alea = randomLetters(4);
+          userName = "utilisateur" + alea;
+          await creerUtilisateur(userName);
+          modalNameOverlay.style.display = "none";
+          mainContent.classList.add("active");
+          resolve();
+        };
+      });
+    }
+
+    // Au chargement de la page, demander le nom avant toute interaction
+    window.addEventListener("DOMContentLoaded", async () => {
+      await demanderNomUtilisateur();
+    });
   </script>
 </body>
 </html>
