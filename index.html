@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bloc-note collaboratif</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f7f7f7; }
+    header { background-color: #2c3e50; color: white; padding: 1rem; text-align: center; font-size: 1.5rem; }
+    main { padding: 1rem; }
+    #nouveau-note { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    #texte { flex: 1; padding: 0.5rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; resize: vertical; }
+    #imgInput { padding: 0.5rem; }
+    #btnAjouter { padding: 0.5rem 1rem; border: none; background-color: #27ae60; color: white; font-size: 1rem; border-radius: 4px; cursor: pointer; }
+    .search-container { margin-bottom: 1rem; }
+    #recherche { width: 100%; padding: 0.5rem; font-size: 1rem; border: 1px solid #ccc; border-radius: 4px; }
+    #liste-notes { background: white; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; }
+    .note { position: relative; padding: 1rem; margin-bottom: 1rem; background: white; border-radius: 4px; }
+    .note .supprimer { position: absolute; top: 0.5rem; right: 0.5rem; background: none; border: none; color: red; font-size: 1.2rem; cursor: pointer; }
+    .note img { max-width: 100%; margin-top: 0.5rem; border-radius: 4px; }
+    .auteur, .date-modif { font-size: 0.8rem; color: #555; }
+    .auteur { margin-top: 0.5rem; }
+    .highlight { background: yellow; }
+  </style>
+</head>
+<body>
+  <header>Bloc-note collaboratif</header>
+  <main>
+    <div id="nouveau-note">
+      <textarea id="texte" rows="2" placeholder="Écrivez ici…"></textarea>
+      <input type="file" id="imgInput" accept="image/*" />
+      <button id="btnAjouter">Ajouter</button>
+    </div>
+    <div class="search-container">
+      <input type="text" id="recherche" placeholder="Recherche rapide…" />
+    </div>
+    <div id="liste-notes"></div>
+  </main>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbziUFiWuK9_iOeK-cyB1h8GfovQoU45A",
+      authDomain: "note-c08d3.firebaseapp.com",
+      projectId: "note-c08d3",
+      storageBucket: "note-c08d3.appspot.com",
+      messagingSenderId: "49825516812",
+      appId: "1:49825516812:web:4684bf1a383578856e8d29"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const notesCol = collection(db, "notes");
+
+    const texte = document.getElementById("texte");
+    const imgInput = document.getElementById("imgInput");
+    const btnAjouter = document.getElementById("btnAjouter");
+    const listeNotes = document.getElementById("liste-notes");
+    const recherche = document.getElementById("recherche");
+
+    let imageData = null;
+    imgInput.addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = () => imageData = reader.result;
+        reader.readAsDataURL(file);
+      }
+    });
+
+    btnAjouter.addEventListener("click", async () => {
+      const text = texte.value.trim();
+      if (!text && !imageData) return;
+      await addDoc(notesCol, {
+        auteur: "Utilisateur",
+        contenu: text,
+        image: imageData,
+        dateModification: new Date().toISOString()
+      });
+      texte.value = "";
+      imgInput.value = "";
+      imageData = null;
+    });
+
+    onSnapshot(query(notesCol, orderBy("dateModification","desc")), snap => {
+      listeNotes.innerHTML = "";
+      snap.docs.forEach(docSnap => {
+        const n = docSnap.data();
+        const div = document.createElement("div");
+        div.className = "note";
+        const btnDel = document.createElement("button");
+        btnDel.className = "supprimer";
+        btnDel.textContent = "×";
+        btnDel.onclick = () => deleteDoc(doc(notesCol, docSnap.id));
+        div.appendChild(btnDel);
+        if (n.contenu) {
+          const p = document.createElement("p");
+          p.textContent = n.contenu;
+          div.appendChild(p);
+        }
+        if (n.image) {
+          const im = document.createElement("img");
+          im.src = n.image;
+          div.appendChild(im);
+        }
+        const auth = document.createElement("div");
+        auth.className = "auteur";
+        auth.textContent = n.auteur;
+        div.appendChild(auth);
+        const date = document.createElement("div");
+        date.className = "date-modif";
+        date.textContent = new Date(n.dateModification).toLocaleString();
+        div.appendChild(date);
+        listeNotes.appendChild(div);
+      });
+    });
+
+    recherche.addEventListener("input", () => {
+      const term = recherche.value.toLowerCase();
+      document.querySelectorAll(".note").forEach(div => {
+        div.innerHTML = div.innerHTML.replace(/<span class="highlight">|<\/span>/g,"");
+        if (term) {
+          const regex = new RegExp(term, "gi");
+          div.innerHTML = div.innerHTML.replace(regex, match => `<span class="highlight">${match}</span>`);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
