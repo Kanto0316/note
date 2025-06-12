@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bloc-note collaboratif</title>
+
+  <!-- ========== Style CSS inline ========== -->
+  <style>
+    /* Styles généraux */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f7f7f7;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      position: relative;
+      background-color: #2c3e50;
+      color: #fff;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+      cursor: pointer; /* cliquable pour modifier le nom */
+    }
+    /* Compteur à droite du titre */
+    main { flex: 1; display: flex; flex-direction: column; padding: 1rem; }
+    main.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    footer {
+      text-align: center;
+      padding: 0.5rem;
+      font-size: 0.9rem;
+      color: #666;
+      background-color: #ecf0f1;
+      margin-top: auto;
+    }
+
+    /* Zone d’ajout de note */
+    #nouveau-note {
+      display: flex;
+      margin-bottom: 0.5rem;
+    }
+    #nouveau-note textarea {
+      flex: 1;
+      resize: vertical;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px 0 0 4px;
+    }
+    #nouveau-note button {
+      padding: 0 1rem;
+      border: none;
+      background-color: #27ae60;
+      color: #fff;
+      font-size: 1rem;
+      border-radius: 0 4px 4px 0;
+      cursor: pointer;
+    }
+
+    /* Container de recherche */
+    .search-container {
+      margin-bottom: 0.75rem;
+    }
+    #recherche {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    /* Zone d’affichage du mot recherché */
+    #etatRecherche {
+      font-size: 0.9rem;
+      color: #333;
+      margin-bottom: 0.75rem;
+      min-height: 1.2rem;
+    }
+
+    /* Liste des notes (multiligne) */
+    #liste-notes {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 0.5rem;
+    }
+    .note {
+      padding: 0.5rem;
+      position: relative;
+      white-space: pre-wrap;    /* conserve sauts de ligne */
+      word-break: break-word;   /* retour à la ligne pour mots longs */
+      cursor: default;
+      border-bottom: 2px solid #27ae60; /* séparation verte */
+      margin-bottom: 0.5rem;
+      padding-bottom: 1.5rem;   /* espace pour la date et l’auteur */
+    }
+    .note:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0.5rem;
+    }
+    .supprimer {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: none;
+      border: none;
+      color: #c0392b;
+      font-size: 1.2rem;
+      cursor: pointer;
+      z-index: 2;
+    }
+    .date-modif {
+      position: absolute;
+      bottom: 0.5rem;
+      right: 0.5rem;
+      font-size: 0.8rem;
+      color: #555;
+    }
+    .auteur {
+      position: absolute;
+      bottom: 0.5rem;
+      left: 0.5rem;
+      font-size: 0.8rem;
+      color: #333;
+    }
+
+    /* Style pour le terme surligné */
+    .highlight {
+      background-color: yellow;
+    }
+
+    /* Styles pour l’édition inline */
+    .edit-area {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 1rem;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+      margin-bottom: 0.5rem;
+      min-height: 80px; /* hauteur confortable sur mobile */
+      word-break: break-word;
+    }
+    .edit-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+    .btn-save {
+      background-color: #2980b9;
+      color: #fff;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-cancel {
+      background-color: #7f8c8d;
+      color: #fff;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    /* Modal de confirmation */
+    #modalOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+    #modalContent {
+      background-color: #fff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      max-width: 90%;
+      width: 300px;
+      text-align: center;
+    }
+    #modalContent h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .modal-buttons {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 1rem;
+    }
+    .modal-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .modal-btn.yes {
+      background-color: #c0392b;
+      color: #fff;
+    }
+    .modal-btn.no {
+      background-color: #7f8c8d;
+      color: #fff;
+    }
+
+    /* Modal de saisie du nom d’utilisateur */
+    #modalNameOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+      display: none; /* masqué par défaut */ 
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+    }
+    #modalNameContent {
+      background-color: #fff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      max-width: 90%;
+      width: 300px;
+      text-align: center;
+    }
+    #modalNameContent h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    #modalNameContent input {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    #modalNameContent .modal-buttons {
+      display: flex;
+      justify-content: space-around;
+    }
+    #modalNameContent .modal-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #modalNameContent .modal-btn.ok {
+      background-color: #2980b9;
+      color: #fff;
+    }
+    #modalNameContent .modal-btn.cancel {
+      background-color: #7f8c8d;
+      color: #fff;
+    }
+
+    /* Modal de modification du nom */
+    #modalEditOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+    }
+    #modalEditContent {
+      background-color: #fff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      max-width: 90%;
+      width: 300px;
+      text-align: center;
+    }
+    #modalEditContent h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    #modalEditContent input {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    #modalEditContent .modal-buttons {
+      display: flex;
+      justify-content: space-around;
+    }
+    #modalEditContent .modal-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #modalEditContent .modal-btn.ok {
+      background-color: #2980b9;
+      color: #fff;
+    }
+    #modalEditContent .modal-btn.cancel {
+      background-color: #7f8c8d;
+      color: #fff;
+    }
+  
+  /* Wrapper pour aligner comme la zone « Ajouter » */
+  .search-wrapper {
+    display: flex;
+    width: 100%;
+    margin: 10px 0;
+  }
+  .search-wrapper .recherche {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+  }
+
+  /* Espace sous le contenu de la note pour le nom d'utilisateur */
+  .note .contenu {
+    margin-bottom: 1.5rem;
+  }
+
+
+  /* Ajustement espacement bottom pour éviter chevauchement user */
+  .note {
+    padding-bottom: 3rem !important;
+  }
+
+</style>
+</head>
+<body>
+
+  <header id="headerTitle">
+    Bloc-note collaboratif
+  </header>
+
+  <main id="mainContent" class="active">
+    <!-- Zone de saisie pour une nouvelle note -->
+    <div id="nouveau-note">
+      <textarea id="texte" rows="2" placeholder="Écrivez ici…"></textarea>
+      <button id="btnAjouter">Ajouter</button>
+    </div>
+
+    <!-- Container recherche -->
+    <div class="search-wrapper">
+  <input type="text" id="recherche" class="recherche" placeholder="Recherche rapide…" />
+    </div>
+
+    <!-- Zone pour afficher le mot recherché -->
+    <div id="etatRecherche"></div>
+
+    <!-- Zone d’affichage des notes (multiligne) -->
+    <div id="liste-notes">
+      <!-- Les notes s’afficheront ici en plusieurs lignes -->
+    </div>
+  </main>
+
+  <!-- Modal de confirmation de suppression -->
+  <div id="modalOverlay">
+    <div id="modalContent">
+      <h2>Voulez-vous supprimer cet élément ?</h2>
+      <div class="modal-buttons">
+        <button class="modal-btn yes" id="confirmDelete">Oui</button>
+        <button class="modal-btn no" id="cancelDelete">Non</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de saisie du nom d’utilisateur -->
+  <div id="modalNameOverlay">
+    <div id="modalNameContent">
+      <h2>Entrer votre nom</h2>
+      <input type="text" id="inputUserName" placeholder="Votre nom…" maxlength="20" />
+      <div class="modal-buttons">
+        <button class="modal-btn ok" id="okName">OK</button>
+        <button class="modal-btn cancel" id="cancelName">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de modification du nom -->
+  <div id="modalEditOverlay">
+    <div id="modalEditContent">
+      <h2>Modifier votre nom ?</h2>
+      <input type="text" id="inputEditUserName" maxlength="20" />
+      <div class="modal-buttons">
+        <button class="modal-btn ok" id="okEditName">OK</button>
+        <button class="modal-btn cancel" id="cancelEditName">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>Les notes sont stockées en temps réel dans Firestore.</footer>
+
+  <!-- ========== Scripts Firebase (modulaire) + JS inline ========== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics.js";
+    import {
+      getFirestore,
+      collection,
+      addDoc,
+      deleteDoc,
+      updateDoc,
+      doc,
+      setDoc,
+      onSnapshot,
+      orderBy,
+      query,
+      where,
+      getDocs,
+      serverTimestamp
+    } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+    // Configuration Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyBbziUFiWuK9_iOeK-cyB1h8GfovQoU45A",
+      authDomain: "note-c08d3.firebaseapp.com",
+      projectId: "note-c08d3",
+      storageBucket: "note-c08d3.firebasestorage.app",
+      messagingSenderId: "49825516812",
+      appId: "1:49825516812:web:4684bf1a383578856e8d29",
+      measurementId: "G-3VR9RGMS5N"
+    };
+
+    // Initialisation Firebase
+    const app = initializeApp(firebaseConfig);
+    getAnalytics(app);
+    const db = getFirestore(app);
+
+    // Références des collections
+    const notesCollection    = collection(db, "notes");
+    const usersCollection    = collection(db, "users");
+
+    // Éléments DOM
+    const textarea         = document.getElementById("texte");
+    const btnAjouter       = document.getElementById("btnAjouter");
+    const inputRecherche   = document.getElementById("recherche");
+    const etatRechercheDiv = document.getElementById("etatRecherche");
+    const listeNotesDiv    = document.getElementById("liste-notes");
+    const mainContent      = document.getElementById("mainContent");
+    const headerTitle      = document.getElementById("headerTitle");
+    const userCountHeader  = document.getElementById("userCountHeader");
+
+    const modalOverlay     = document.getElementById("modalOverlay");
+    const confirmDeleteBtn = document.getElementById("confirmDelete");
+    const cancelDeleteBtn  = document.getElementById("cancelDelete");
+
+    const modalNameOverlay = document.getElementById("modalNameOverlay");
+    const inputUserName    = document.getElementById("inputUserName");
+    const okNameBtn        = document.getElementById("okName");
+    const cancelNameBtn    = document.getElementById("cancelName");
+
+    const modalEditOverlay   = document.getElementById("modalEditOverlay");
+    const inputEditUserName  = document.getElementById("inputEditUserName");
+    const okEditNameBtn      = document.getElementById("okEditName");
+    const cancelEditNameBtn  = document.getElementById("cancelEditName");
+
+    let idNoteToDelete = null;
+    let notesLocales   = [];
+    let userName       = "";
+
+    // Générer 4 lettres aléatoires
+    function randomLetters(n) {
+      let result = "";
+      const chars = "abcdefghijklmnopqrstuvwxyz";
+      for (let i = 0; i < n; i++) {
+        result += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return result;
+    }
+
+    // Formater un Timestamp Firestore en chaîne locale
+    function formaterDate(timestamp) {
+      if (!timestamp) return "";
+      const date = timestamp.toDate();
+      return date.toLocaleString("fr-FR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    // Afficher les notes, avec séparation verte, date et auteur,
+    // et n’autoriser la suppression qu’aux propres notes
+    function renderNotes() {
+      const filtre = inputRecherche.value.trim().toLowerCase();
+      listeNotesDiv.innerHTML = "";
+
+      if (filtre) {
+        etatRechercheDiv.textContent = `Résultats pour : “${filtre}”`;
+      } else {
+        etatRechercheDiv.textContent = "";
+      }
+
+      notesLocales.forEach((note) => {
+        if (filtre && !note.contenu.toLowerCase().includes(filtre)) {
+          return;
+        }
+
+        const divNote = document.createElement("div");
+        divNote.className = "note";
+
+        // Paragraphe avec surlignage du filtre
+        const parag = document.createElement("p");
+        parag.style.margin = "0";
+        parag.style.cursor = "pointer";
+
+        if (filtre) {
+          const escapedFiltre = filtre.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&");
+          const regex = new RegExp(`(${escapedFiltre})`, "gi");
+          const contenuSurligne = note.contenu.replace(
+            regex,
+            '<span class="highlight">$1</span>'
+          );
+          parag.innerHTML = contenuSurligne;
+        } else {
+          parag.textContent = note.contenu;
+        }
+        parag.onclick = () => {
+          passerEnModeEdition(divNote, note);
+        };
+
+        // Si l’auteur est l’utilisateur courant, on affiche le bouton supprimer
+        if (note.auteur === userName || userName === "Admin") {
+          const btnSupprimer = document.createElement("button");
+          btnSupprimer.className = "supprimer";
+          btnSupprimer.innerHTML = "&times;";
+          btnSupprimer.onclick = (e) => {
+            e.stopPropagation();
+            idNoteToDelete = note.id;
+            modalOverlay.style.display = "flex";
+          };
+          divNote.appendChild(btnSupprimer);
+        }
+
+        // Date de modification
+        const spanDate = document.createElement("div");
+        spanDate.className = "date-modif";
+        spanDate.textContent = formaterDate(note.dateModification);
+
+        // Auteur
+        const spanUser = document.createElement("div");
+        spanUser.className = "auteur";
+        spanUser.textContent = note.auteur || "Inconnu";
+
+        divNote.appendChild(parag);
+        divNote.appendChild(spanDate);
+        divNote.appendChild(spanUser);
+        listeNotesDiv.appendChild(divNote);
+      });
+    }
+
+    // Passer en mode édition inline
+    function passerEnModeEdition(divNote, note) {
+      // N’autoriser l’édition que si l’utilisateur est l’auteur
+      if (note.auteur !== userName && userName !== "Admin") return;
+
+      divNote.innerHTML = "";
+
+      const textareaEdit = document.createElement("textarea");
+      textareaEdit.className = "edit-area";
+      textareaEdit.value = note.contenu;
+      textareaEdit.rows = 5;
+      setTimeout(() => {
+        textareaEdit.focus();
+      }, 0);
+
+      const buttonsDiv = document.createElement("div");
+      buttonsDiv.className = "edit-buttons";
+
+      const btnSave = document.createElement("button");
+      btnSave.className = "btn-save";
+      btnSave.textContent = "Sauvegarder";
+      btnSave.onclick = (e) => {
+        e.stopPropagation();
+        const nouveauTexte = textareaEdit.value.trim();
+        if (nouveauTexte === "") {
+          alert("Le contenu ne peut pas être vide.");
+          return;
+        }
+        modifierNoteDansFirestore(note.id, nouveauTexte);
+      };
+
+      const btnCancel = document.createElement("button");
+      btnCancel.className = "btn-cancel";
+      btnCancel.textContent = "Annuler";
+      btnCancel.onclick = (e) => {
+        e.stopPropagation();
+        renderNotes();
+      };
+
+      buttonsDiv.appendChild(btnSave);
+      buttonsDiv.appendChild(btnCancel);
+
+      divNote.appendChild(textareaEdit);
+      divNote.appendChild(buttonsDiv);
+    }
+
+    // Écoute Firestore, tri par dateModification descendante
+    const qNotes = query(notesCollection, orderBy("dateModification", "desc"));
+    onSnapshot(qNotes, (snapshot) => {
+      notesLocales = [];
+      snapshot.forEach((docSnapshot) => {
+        const data = docSnapshot.data();
+        notesLocales.push({
+          id: docSnapshot.id,
+          contenu: data.contenu || "",
+          dateModification: data.dateModification || data.dateCreation,
+          auteur: data.auteur || "Inconnu"
+        });
+      });
+      renderNotes();
+    }, (err) => {
+      console.error("Erreur écoute Firestore :", err);
+    });
+
+    // Ajouter note (avec auteur et dateModification initiale)
+    async function ajouterNoteDansFirestore(texte) {
+      try {
+        await addDoc(notesCollection, {
+          contenu: texte,
+          dateCreation: serverTimestamp(),
+          dateModification: serverTimestamp(),
+          auteur: userName
+        });
+      } catch (err) {
+        console.error("Erreur ajout note :", err);
+      }
+    }
+
+    // Supprimer note
+    async function supprimerNoteDansFirestore(idDoc) {
+      try {
+        await deleteDoc(doc(db, "notes", idDoc));
+      } catch (err) {
+        console.error("Erreur suppression :", err);
+      }
+    }
+
+    // Modifier note (met à jour dateModification)
+    async function modifierNoteDansFirestore(idDoc, nouveauTexte) {
+      try {
+        await updateDoc(doc(db, "notes", idDoc), {
+          contenu: nouveauTexte,
+          dateModification: serverTimestamp()
+        });
+      } catch (err) {
+        console.error("Erreur modification note :", err);
+      }
+    }
+
+    // Gestion du clic sur “Ajouter”
+    btnAjouter.addEventListener("click", () => {
+      const texte = textarea.value.trim();
+      if (texte === "") {
+        alert("Vous ne pouvez pas ajouter une note vide.");
+        return;
+      }
+      ajouterNoteDansFirestore(texte);
+      textarea.value = "";
+      textarea.focus();
+    });
+
+    // Recherche en temps réel
+    inputRecherche.addEventListener("input", renderNotes);
+
+    // Gestion du modal de suppression
+    confirmDeleteBtn.onclick = () => {
+      if (idNoteToDelete) {
+        supprimerNoteDansFirestore(idNoteToDelete);
+        idNoteToDelete = null;
+      }
+      modalOverlay.style.display = "none";
+    };
+    cancelDeleteBtn.onclick = () => {
+      idNoteToDelete = null;
+      modalOverlay.style.display = "none";
+    };
+    modalOverlay.onclick = (e) => {
+      if (e.target === modalOverlay) {
+        idNoteToDelete = null;
+        modalOverlay.style.display = "none";
+      }
+    };
+
+    // Vérifier si un nom existe déjà
+    async function nomExiste(nom) {
+      const qUser = query(usersCollection, where("name", "==", nom));
+      const querySnapshot = await getDocs(qUser);
+      return !querySnapshot.empty;
+    }
+
+    // Créer un nouvel utilisateur dans Firestore
+    async function creerUtilisateur(nom) {
+      try {
+        await addDoc(usersCollection, {
+          name: nom,
+          timestamp: serverTimestamp()
+        });
+      } catch (err) {
+        console.error("Erreur création utilisateur :", err);
+      }
+    }
+
+    // Supprimer un document utilisateur selon son nom
+    async function supprimerUtilisateurParNom(nom) {
+      const qUser = query(usersCollection, where("name", "==", nom));
+      const snapshot = await getDocs(qUser);
+      for (const docSnap of snapshot.docs) {
+        await deleteDoc(doc(db, "users", docSnap.id));
+      }
+    }
+
+
+    // Écoute en temps réel de la collection 'presence'
+
+    // Gérer la saisie du nom au chargement
+    async function demanderNomUtilisateur() {
+      // Si un nom est déjà stocké en localStorage, on l’utilise
+      const stocke = localStorage.getItem("userName");
+      if (stocke) {
+        userName = stocke;
+        document.title = userName;
+        // Mettre à jour le texte principal du header sans écraser le compteur
+        headerTitle.childNodes[0].textContent = userName;
+        modalNameOverlay.style.display = "none";
+        mainContent.classList.add("active");
+
+        // Créer présence dès que le nom est chargé
+        return;
+      }
+
+      // Sinon, on affiche le modal
+      modalNameOverlay.style.display = "flex";
+      inputUserName.value = "";
+
+      return new Promise((resolve) => {
+        okNameBtn.onclick = async () => {
+          const nomEntre = inputUserName.value.trim();
+          if (nomEntre !== "") {
+            const existe = await nomExiste(nomEntre);
+            if (existe) {
+              alert("Ce nom est déjà utilisé, veuillez en choisir un autre.");
+              return;
+            }
+            userName = nomEntre;
+          } else {
+            // Si champ vide, on génère
+            const alea = randomLetters(4);
+            userName = "utilisateur" + alea;
+          }
+
+          // Enregistrer et fermer modal
+          localStorage.setItem("userName", userName);
+          await creerUtilisateur(userName);
+          document.title = userName;
+          headerTitle.childNodes[0].textContent = userName;
+          modalNameOverlay.style.display = "none";
+          mainContent.classList.add("active");
+          resolve();
+        };
+
+        cancelNameBtn.onclick = async () => {
+          // Utilisateur refuse → on génère
+          const alea = randomLetters(4);
+          userName = "utilisateur" + alea;
+          localStorage.setItem("userName", userName);
+          await creerUtilisateur(userName);
+          document.title = userName;
+          headerTitle.childNodes[0].textContent = userName;
+          modalNameOverlay.style.display = "none";
+          mainContent.classList.add("active");
+          resolve();
+        };
+      });
+    }
+
+    // Ouvrir le modal de modification de nom
+    headerTitle.addEventListener("click", () => {
+      inputEditUserName.value = userName;
+      modalEditOverlay.style.display = "flex";
+    });
+
+    // Gérer la modification du nom
+    okEditNameBtn.onclick = async () => {
+      const nouveauNom = inputEditUserName.value.trim();
+      if (!nouveauNom) {
+        alert("Le nom ne peut pas être vide.");
+        return;
+      }
+      if (nouveauNom === userName) {
+        modalEditOverlay.style.display = "none";
+        return;
+      }
+      const existe = await nomExiste(nouveauNom);
+      if (existe) {
+        alert("Ce nom est déjà utilisé, veuillez en choisir un autre.");
+        return;
+      }
+      // On met à jour localStorage et Firestore
+      const ancienNom = userName;
+      userName = nouveauNom;
+      localStorage.setItem("userName", userName);
+      await creerUtilisateur(userName);
+      document.title = userName;
+      headerTitle.childNodes[0].textContent = userName;
+
+      // Mettre à jour le champ 'auteur' des notes existantes
+      const qUpdate = query(notesCollection, where("auteur", "==", ancienNom));
+      const snapshotUpdate = await getDocs(qUpdate);
+      for (const docSnapshot of snapshotUpdate.docs) {
+        await updateDoc(doc(db, "notes", docSnapshot.id), { auteur: userName });
+      }
+
+      // Supprimer l’ancien nom dans la collection 'users'
+      await supprimerUtilisateurParNom(ancienNom);
+
+      // Mettre à jour présence Firestore : supprimer ancienne doc, créer nouvelle
+      await retirerPresence();
+
+      modalEditOverlay.style.display = "none";
+    };
+
+    cancelEditNameBtn.onclick = () => {
+      modalEditOverlay.style.display = "none";
+    };
+    modalEditOverlay.onclick = (e) => {
+      if (e.target === modalEditOverlay) {
+        modalEditOverlay.style.display = "none";
+      }
+    };
+
+    // À la fermeture ou navigation hors de la page, on retire la présence
+
+    // Au chargement de la page, demander le nom avant toute interaction
+    window.addEventListener("DOMContentLoaded", async () => {
+      await demanderNomUtilisateur();
+    });
+  </script>
+</body>
+</html>
