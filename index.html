@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Formulaire de Saisie</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 50px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      max-width: 400px;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      margin: auto;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input[type="text"],
+    input[type="number"],
+    input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #saveBtn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      width: 100%;
+      border: none;
+      background-color: #007bfc;
+      color: white;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #saveBtn:hover {
+      background-color: #005bb5;
+    }
+    #resultList {
+      list-style: none;
+      padding: 0;
+      max-width: 400px;
+      margin: 30px auto 0;
+    }
+    #resultList li {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      padding: 10px;
+      margin-top: 15px;
+    }
+    #resultList img {
+      width: 7cm;
+      height: 7cm;
+      object-fit: cover;
+      margin-right: 15px;
+      border-radius: 4px;
+    }
+    .item-info {
+      display: flex;
+      flex-direction: column;
+    }
+    .item-info span {
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <label for="nameInput">Nom :</label>
+    <input type="text" id="nameInput" placeholder="Entrez votre nom">
+
+    <label for="numberInput">Chiffre :</label>
+    <input type="number" id="numberInput" placeholder="Entrez un chiffre">
+
+    <label for="imageInput">Image :</label>
+    <input type="file" id="imageInput" accept="image/*">
+
+    <button id="saveBtn">Enregistrer</button>
+  </div>
+
+  <ul id="resultList"></ul>
+
+  <script>
+    function renderList() {
+      const list = document.getElementById('resultList');
+      list.innerHTML = '';
+      const entries = JSON.parse(localStorage.getItem('entries') || '[]');
+      entries.forEach(entry => {
+        const li = document.createElement('li');
+        const img = document.createElement('img');
+        img.src = entry.imageData;
+        const info = document.createElement('div');
+        info.className = 'item-info';
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = 'Nom: ' + entry.name;
+        const numberSpan = document.createElement('span');
+        numberSpan.textContent = 'Chiffre: ' + entry.number;
+        info.appendChild(nameSpan);
+        info.appendChild(numberSpan);
+        li.appendChild(img);
+        li.appendChild(info);
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById('saveBtn').addEventListener('click', function() {
+      const name = document.getElementById('nameInput').value.trim();
+      const number = document.getElementById('numberInput').value;
+      const fileInput = document.getElementById('imageInput');
+
+      if (!name || !number || !fileInput.files.length) {
+        alert('Merci de remplir tous les champs et sélectionner une image.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const entries = JSON.parse(localStorage.getItem('entries') || '[]');
+        entries.push({ name: name, number: number, imageData: event.target.result });
+        localStorage.setItem('entries', JSON.stringify(entries));
+        renderList();
+        document.getElementById('nameInput').value = '';
+        document.getElementById('numberInput').value = '';
+        document.getElementById('imageInput').value = '';
+      };
+      reader.readAsDataURL(fileInput.files[0]);
+    });
+
+    window.addEventListener('load', renderList);
+  </script>
+</body>
+</html>
