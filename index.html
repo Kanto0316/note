@@ -139,6 +139,14 @@
       color: #333;
     }
 
+    /* Message quand aucune note n'est disponible */
+    .aucune-note {
+      text-align: center;
+      padding: 1rem;
+      color: #888;
+      font-style: italic;
+    }
+
     /* Style pour le terme surligné */
     .highlight {
       background-color: yellow;
@@ -533,6 +541,8 @@
         etatRechercheDiv.textContent = "";
       }
 
+      let nbAffichees = 0;
+
       notesLocales.forEach((note) => {
         if (filtre && !note.contenu.toLowerCase().includes(filtre)) {
           return;
@@ -588,7 +598,15 @@
         divNote.appendChild(spanDate);
         divNote.appendChild(spanUser);
         listeNotesDiv.appendChild(divNote);
+        nbAffichees++;
       });
+
+      if (nbAffichees === 0) {
+        const aucune = document.createElement("div");
+        aucune.className = "aucune-note";
+        aucune.textContent = "Aucune note";
+        listeNotesDiv.appendChild(aucune);
+      }
     }
 
     // Passer en mode édition inline
@@ -706,7 +724,12 @@
     inputRecherche.addEventListener("input", renderNotes);
 
     // Afficher toutes les notes dès le chargement
-    renderNotes();
+    function afficherToutesLesNotes() {
+      inputRecherche.value = "";
+      renderNotes();
+    }
+
+    window.addEventListener("load", afficherToutesLesNotes);
 
     // Gestion du modal de suppression
     confirmDeleteBtn.onclick = () => {
