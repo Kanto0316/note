@@ -158,40 +158,6 @@
 
 
 
-    /* Styles pour l’édition inline */
-    .edit-area {
-      width: 100%;
-      box-sizing: border-box;
-      font-size: 1rem;
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      resize: vertical;
-      margin-bottom: 0.5rem;
-      min-height: 80px; /* hauteur confortable sur mobile */
-      word-break: break-word;
-    }
-    .edit-buttons {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    .btn-save {
-      background-color: #2980b9;
-      color: #fff;
-      border: none;
-      padding: 0.4rem 0.8rem;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .btn-cancel {
-      background-color: #7f8c8d;
-      color: #fff;
-      border: none;
-      padding: 0.4rem 0.8rem;
-      border-radius: 4px;
-      cursor: pointer;
-    }
 
     /* Modal de confirmation */
     #modalOverlay {
@@ -352,6 +318,60 @@
       background-color: #7f8c8d;
       color: #fff;
     }
+
+    /* Modal d'édition de note */
+    #modalNoteOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 20;
+    }
+    #modalNoteContent {
+      background-color: #fff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      max-width: 90%;
+      width: 400px;
+      text-align: center;
+    }
+    #modalNoteContent textarea {
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 1rem;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+      margin-bottom: 1rem;
+      min-height: 80px;
+    }
+    #modalNoteContent .modal-buttons {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 1rem;
+    }
+    #modalNoteContent .modal-btn {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    #modalNoteContent .modal-btn.save {
+      background-color: #2980b9;
+      color: #fff;
+    }
+    #modalNoteContent .modal-btn.cancel {
+      background-color: #7f8c8d;
+      color: #fff;
+    }
   
   /* Champ de recherche désactivé */
   /*
@@ -442,6 +462,17 @@
     </div>
   </div>
 
+  <!-- Modal d'édition de note -->
+  <div id="modalNoteOverlay">
+    <div id="modalNoteContent">
+      <textarea id="noteTextarea" rows="5"></textarea>
+      <div class="modal-buttons">
+        <button class="modal-btn save" id="saveNote">Sauvegarder</button>
+        <button class="modal-btn cancel" id="cancelNote">Annuler</button>
+      </div>
+    </div>
+  </div>
+
   <footer>Les notes sont stockées en temps réel dans Firestore.</footer>
 
   <!-- ========== Scripts Firebase (modulaire) + JS inline ========== -->
@@ -503,10 +534,17 @@
     const okNameBtn        = document.getElementById("okName");
     const cancelNameBtn    = document.getElementById("cancelName");
 
-    const modalEditOverlay   = document.getElementById("modalEditOverlay");
-    const inputEditUserName  = document.getElementById("inputEditUserName");
-    const okEditNameBtn      = document.getElementById("okEditName");
-    const cancelEditNameBtn  = document.getElementById("cancelEditName");
+      const modalEditOverlay   = document.getElementById("modalEditOverlay");
+      const inputEditUserName  = document.getElementById("inputEditUserName");
+      const okEditNameBtn      = document.getElementById("okEditName");
+      const cancelEditNameBtn  = document.getElementById("cancelEditName");
+
+      const modalNoteOverlay   = document.getElementById("modalNoteOverlay");
+      const noteTextarea       = document.getElementById("noteTextarea");
+      const saveNoteBtn        = document.getElementById("saveNote");
+      const cancelNoteBtn      = document.getElementById("cancelNote");
+
+      let currentNoteId = null;
 
     let idNoteToDelete = null;
     let notesLocales   = [];
@@ -601,50 +639,15 @@
       }
     }
 
-    // Passer en mode édition inline
+    // Passer en mode édition via modal
     function passerEnModeEdition(divNote, note) {
-      // N’autoriser l’édition que si l’utilisateur est l’auteur
       if (note.auteur !== userName && userName !== "Admin") return;
-
-      divNote.innerHTML = "";
-
-      const textareaEdit = document.createElement("textarea");
-      textareaEdit.className = "edit-area";
-      textareaEdit.value = note.contenu;
-      textareaEdit.rows = 5;
+      currentNoteId = note.id;
+      noteTextarea.value = note.contenu;
+      modalNoteOverlay.style.display = "flex";
       setTimeout(() => {
-        textareaEdit.focus();
+        noteTextarea.focus();
       }, 0);
-
-      const buttonsDiv = document.createElement("div");
-      buttonsDiv.className = "edit-buttons";
-
-      const btnSave = document.createElement("button");
-      btnSave.className = "btn-save";
-      btnSave.textContent = "Sauvegarder";
-      btnSave.onclick = (e) => {
-        e.stopPropagation();
-        const nouveauTexte = textareaEdit.value.trim();
-        if (nouveauTexte === "") {
-          alert("Le contenu ne peut pas être vide.");
-          return;
-        }
-        modifierNoteDansFirestore(note.id, nouveauTexte);
-      };
-
-      const btnCancel = document.createElement("button");
-      btnCancel.className = "btn-cancel";
-      btnCancel.textContent = "Annuler";
-      btnCancel.onclick = (e) => {
-        e.stopPropagation();
-        renderNotes();
-      };
-
-      buttonsDiv.appendChild(btnSave);
-      buttonsDiv.appendChild(btnCancel);
-
-      divNote.appendChild(textareaEdit);
-      divNote.appendChild(buttonsDiv);
     }
 
     // Écoute Firestore, tri par dateModification descendante
@@ -736,6 +739,29 @@
       if (e.target === modalOverlay) {
         idNoteToDelete = null;
         modalOverlay.style.display = "none";
+      }
+    };
+
+    // Gestion du modal d'édition de note
+    saveNoteBtn.onclick = () => {
+      if (!currentNoteId) return;
+      const nouveauTexte = noteTextarea.value.trim();
+      if (nouveauTexte === "") {
+        alert("Le contenu ne peut pas être vide.");
+        return;
+      }
+      modifierNoteDansFirestore(currentNoteId, nouveauTexte);
+      currentNoteId = null;
+      modalNoteOverlay.style.display = "none";
+    };
+    cancelNoteBtn.onclick = () => {
+      currentNoteId = null;
+      modalNoteOverlay.style.display = "none";
+    };
+    modalNoteOverlay.onclick = (e) => {
+      if (e.target === modalNoteOverlay) {
+        currentNoteId = null;
+        modalNoteOverlay.style.display = "none";
       }
     };
 
