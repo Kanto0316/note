@@ -705,6 +705,9 @@
     // Recherche en temps réel
     inputRecherche.addEventListener("input", renderNotes);
 
+    // Afficher toutes les notes dès le chargement
+    renderNotes();
+
     // Gestion du modal de suppression
     confirmDeleteBtn.onclick = () => {
       if (idNoteToDelete) {
