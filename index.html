@@ -47,16 +47,19 @@
 
     /* Zone d’ajout de note */
     #inputContainer {
-      display: flex;
-      align-items: center; /* pour aligner verticalement */
-      gap: 10px;
-      padding: 10px;
       position: fixed;
       bottom: 0;
+      left: 0;
       width: 100%;
-      background: white;
+      display: flex;
+      align-items: center; /* pour aligner verticalement */
+      gap: 5px;
+      background-color: white;
+      padding: 10px;
+      box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
       border-top: 1px solid #ccc;
       box-sizing: border-box;
+      z-index: 999;
     }
     #noteInput {
       flex: 1;
@@ -96,7 +99,7 @@
     .notes-section {
       width: 100%;
       box-sizing: border-box;
-      padding-bottom: 80px; /* espace pour le champ de saisie fixe */
+      padding-bottom: 70px; /* espace pour le champ de saisie fixe */
     }
 
     /* Champ d\'état de recherche désactivé */
@@ -115,7 +118,7 @@
       border: 1px solid #ddd;
       border-radius: 4px;
       padding: 0.5rem;
-      padding-bottom: 80px;
+      padding-bottom: 70px; /* espace réservé pour ne pas que le contenu passe sous le champ fixe */
     }
     .note {
       padding: 10px;
