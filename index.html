@@ -81,6 +81,13 @@
       font-size: 1rem;
       border: 1px solid #ccc;
       border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    /* Conteneur regroupant recherche et liste pour un alignement commun */
+    .notes-section {
+      width: 100%;
+      box-sizing: border-box;
     }
 
     /* Champ d\'état de recherche désactivé */
@@ -388,13 +395,15 @@
       <button id="btnAjouter">Ajouter</button>
     </div>
 
-    <div class="search-container">
-      <input type="text" id="recherche" placeholder="Recherche rapide…" />
-    </div>
+    <div class="notes-section">
+      <div class="search-container">
+        <input type="text" id="recherche" placeholder="Recherche rapide…" />
+      </div>
 
-    <!-- Zone d’affichage des notes (multiligne) -->
-    <div id="liste-notes">
-      <!-- Les notes s’afficheront ici en plusieurs lignes -->
+      <!-- Zone d’affichage des notes (multiligne) -->
+      <div id="liste-notes">
+        <!-- Les notes s’afficheront ici en plusieurs lignes -->
+      </div>
     </div>
   </main>
 
