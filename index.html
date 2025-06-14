@@ -400,6 +400,25 @@
     padding-bottom: 3rem !important;
   }
 
+  /* Toast message */
+  #toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #27ae60;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 30;
+  }
+  #toast.show {
+    opacity: 1;
+  }
+
 </style>
 </head>
 <body>
@@ -574,6 +593,25 @@
       });
     }
 
+    // Afficher un message toast
+    function showToast(msg) {
+      const toast = document.getElementById("toast");
+      toast.textContent = msg;
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2500);
+    }
+
+    // Copier le texte dans le presse-papiers
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast("✅ Succès : note copiée dans le presse-papiers");
+      }).catch(err => {
+        console.error("Erreur copie", err);
+      });
+    }
+
     // Afficher les notes, avec séparation verte, date et auteur,
     // et n’autoriser la suppression qu’aux propres notes
    function renderNotes() {
@@ -597,13 +635,11 @@
         parag.style.margin = "0";
         parag.style.cursor = "pointer";
         parag.textContent = note.contenu;
-        parag.onclick = () => {
-          passerEnModeEdition(divNote, note);
-        };
 
+        let btnSupprimer = null;
         // Si l’auteur est l’utilisateur courant, on affiche le bouton supprimer
         if (note.auteur === userName || userName === "Admin") {
-          const btnSupprimer = document.createElement("button");
+          btnSupprimer = document.createElement("button");
           btnSupprimer.className = "supprimer";
           btnSupprimer.innerHTML = "&times;";
           btnSupprimer.onclick = (e) => {
@@ -627,6 +663,36 @@
         divNote.appendChild(parag);
         divNote.appendChild(spanDate);
         divNote.appendChild(spanUser);
+
+        // Gestion du clic court / long press
+        let longPressTimer;
+        let longPress = false;
+        divNote.addEventListener("pointerdown", () => {
+          longPress = false;
+          longPressTimer = setTimeout(() => {
+            longPress = true;
+            copyToClipboard(note.contenu);
+          }, 600);
+        });
+        divNote.addEventListener("pointerup", () => {
+          clearTimeout(longPressTimer);
+          if (!longPress) {
+            passerEnModeEdition(divNote, note);
+          }
+        });
+        divNote.addEventListener("pointerleave", () => {
+          clearTimeout(longPressTimer);
+        });
+        divNote.addEventListener("pointercancel", () => {
+          clearTimeout(longPressTimer);
+        });
+
+        if (btnSupprimer) {
+          btnSupprimer.addEventListener("pointerdown", (e) => e.stopPropagation());
+          btnSupprimer.addEventListener("pointerup", (e) => e.stopPropagation());
+          btnSupprimer.addEventListener("pointercancel", (e) => e.stopPropagation());
+        }
+
         listeNotesDiv.appendChild(divNote);
         nbAffichees++;
       });
@@ -915,9 +981,10 @@
     // À la fermeture ou navigation hors de la page, on retire la présence
 
     // Au chargement de la page, demander le nom avant toute interaction
-    window.addEventListener("DOMContentLoaded", async () => {
-      await demanderNomUtilisateur();
-    });
+  window.addEventListener("DOMContentLoaded", async () => {
+    await demanderNomUtilisateur();
+  });
   </script>
+  <div id="toast"></div>
 </body>
 </html>
