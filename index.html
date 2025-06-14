@@ -18,7 +18,7 @@
       min-height: 100vh;
     }
 
-    body.modal-open #nouveau-note {
+    body.modal-open #inputContainer {
       position: static;
     }
     header {
@@ -46,39 +46,36 @@
 
 
     /* Zone d’ajout de note */
-    #nouveau-note {
+    #inputContainer {
+      display: flex;
+      align-items: center; /* pour aligner verticalement */
+      gap: 10px;
+      padding: 10px;
       position: fixed;
       bottom: 0;
-      left: 0;
-      right: 0;
-      background: #fff;
-      padding: 8px;
+      width: 100%;
+      background: white;
       border-top: 1px solid #ccc;
-      display: flex;
-      align-items: flex-end;
-      gap: 10px;
       box-sizing: border-box;
-      z-index: 999;
     }
-    #nouveau-note textarea {
+    #noteInput {
       flex: 1;
-      height: 50px;
-       line-height: 50px;
-      resize: none;
-      padding: 0.5rem;
-      font-size: 0.875rem;
+      height: 45px;              /* même que le bouton */
+      padding: 8px;
+      font-size: 14px;
       border: 1px solid #ccc;
-      border-radius: 4px 0 0 4px;
+      border-radius: 6px;
+      resize: none;
+      box-sizing: border-box;
     }
-    #nouveau-note button {
-      height: 50px;
-      line-height: 50px;
-      padding: 0 1rem;
+    #addButton {
+      height: 45px;              /* même hauteur */
+      padding: 0 16px;
+      font-size: 14px;
+      border-radius: 6px;
+      background-color: #28a745;
+      color: white;
       border: none;
-      background-color: #27ae60;
-      color: #fff;
-      font-size: 1rem;
-      border-radius: 0 4px 4px 0;
       cursor: pointer;
     }
 
@@ -441,9 +438,9 @@
 
   <main id="mainContent">
     <!-- Zone de saisie pour une nouvelle note -->
-    <div id="nouveau-note">
-      <textarea id="texte" rows="2" placeholder="Écrivez ici…"></textarea>
-      <button id="btnAjouter">Ajouter</button>
+    <div id="inputContainer">
+      <textarea id="noteInput" rows="2" placeholder="Écrivez ici…"></textarea>
+      <button id="addButton">Ajouter</button>
     </div>
 
     <div class="notes-section">
@@ -547,8 +544,8 @@
     const usersCollection    = collection(db, "users");
 
     // Éléments DOM
-    const textarea         = document.getElementById("texte");
-    const btnAjouter       = document.getElementById("btnAjouter");
+    const textarea         = document.getElementById("noteInput");
+    const btnAjouter       = document.getElementById("addButton");
     const listeNotesDiv    = document.getElementById("liste-notes");
     const mainContent      = document.getElementById("mainContent");
     const headerTitle      = document.getElementById("headerTitle");
