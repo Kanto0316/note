@@ -21,6 +21,11 @@
     body.modal-open #inputContainer {
       position: static;
     }
+
+    textarea {
+      padding-left: 3.2em; /* augmente l'espacement pour laisser de la place à l'emoji */
+      box-sizing: border-box;
+    }
     header {
       position: relative;
       background-color: #2c3e50;
@@ -64,7 +69,7 @@
     #noteInput {
       flex: 1;
       height: 40px;              /* hauteur réduite */
-      padding: 8px 8px 8px 2.5em; /* espace pour l'emoji */
+      padding: 8px 8px 8px 3.2em; /* laisse plus d'espace pour l'emoji */
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 6px;
