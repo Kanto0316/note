@@ -422,6 +422,43 @@
       background-color: #7f8c8d;
       color: #fff;
     }
+
+    /* Modal d'alerte */
+    #alertModalOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 40;
+    }
+    #alertModalContent {
+      background-color: #fff;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      max-width: 90%;
+      width: 300px;
+      text-align: center;
+    }
+    #alertModalContent h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+    #alertModalContent button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background-color: #2980b9;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   
   /* Champ de recherche désactivé */
   /*
@@ -545,6 +582,15 @@
     </div>
   </div>
 
+  <!-- Modal d'alerte -->
+  <div id="alertModalOverlay">
+    <div id="alertModalContent">
+      <h2>Attention</h2>
+      <p>Vous ne pouvez pas ajouter une note vide.</p>
+      <button id="alertOk">OK</button>
+    </div>
+  </div>
+
 
 
   <!-- ========== Scripts Firebase (modulaire) + JS inline ========== -->
@@ -647,12 +693,17 @@
       const okEditNameBtn      = document.getElementById("okEditName");
       const cancelEditNameBtn  = document.getElementById("cancelEditName");
 
-      const modalNoteOverlay   = document.getElementById("modalNoteOverlay");
-      const noteTextarea       = document.getElementById("noteTextarea");
-      const saveNoteBtn        = document.getElementById("saveNote");
-      const cancelNoteBtn      = document.getElementById("cancelNote");
+    const modalNoteOverlay   = document.getElementById("modalNoteOverlay");
+    const noteTextarea       = document.getElementById("noteTextarea");
+    const saveNoteBtn        = document.getElementById("saveNote");
+    const cancelNoteBtn      = document.getElementById("cancelNote");
 
-      let currentNoteId = null;
+    const alertModalOverlay  = document.getElementById("alertModalOverlay");
+    const alertOkBtn         = document.getElementById("alertOk");
+
+    let alertTimer;
+
+    let currentNoteId = null;
 
     let idNoteToDelete = null;
     let notesLocales   = [];
@@ -718,6 +769,26 @@
         toast.classList.remove("show");
       }, 2500);
     }
+
+    function showAlert(title, msg) {
+      alertModalOverlay.querySelector("h2").textContent = title;
+      alertModalOverlay.querySelector("p").textContent = msg;
+      alertModalOverlay.style.display = "flex";
+      body.classList.add("modal-open");
+      clearTimeout(alertTimer);
+      alertTimer = setTimeout(hideAlert, 3000);
+    }
+
+    function hideAlert() {
+      alertModalOverlay.style.display = "none";
+      body.classList.remove("modal-open");
+      clearTimeout(alertTimer);
+    }
+
+    alertOkBtn.addEventListener("click", hideAlert);
+    alertModalOverlay.addEventListener("click", (e) => {
+      if (e.target === alertModalOverlay) hideAlert();
+    });
 
     // Copier le texte dans le presse-papiers
     function copyToClipboard(text) {
@@ -903,7 +974,7 @@
     btnAjouter.addEventListener("click", () => {
       const texte = textarea.value.trim();
       if (texte === "") {
-        alert("Vous ne pouvez pas ajouter une note vide.");
+        showAlert("Attention", "Vous ne pouvez pas ajouter une note vide.");
         return;
       }
       ajouterNoteDansFirestore(texte);
@@ -947,7 +1018,7 @@
       if (!currentNoteId) return;
       const nouveauTexte = noteTextarea.value.trim();
       if (nouveauTexte === "") {
-        alert("Le contenu ne peut pas être vide.");
+        showAlert("Attention", "Le contenu ne peut pas être vide.");
         return;
       }
       modifierNoteDansFirestore(currentNoteId, nouveauTexte);
@@ -1026,7 +1097,7 @@
           if (nomEntre !== "") {
             const existe = await nomExiste(nomEntre);
             if (existe) {
-              alert("Ce nom est déjà utilisé, veuillez en choisir un autre.");
+              showAlert("Attention", "Ce nom est déjà utilisé, veuillez en choisir un autre.");
               return;
             }
             userName = nomEntre;
@@ -1074,7 +1145,7 @@
     okEditNameBtn.onclick = async () => {
       const nouveauNom = inputEditUserName.value.trim();
       if (!nouveauNom) {
-        alert("Le nom ne peut pas être vide.");
+        showAlert("Attention", "Le nom ne peut pas être vide.");
         return;
       }
       if (nouveauNom === userName) {
@@ -1083,7 +1154,7 @@
       }
       const existe = await nomExiste(nouveauNom);
       if (existe) {
-        alert("Ce nom est déjà utilisé, veuillez en choisir un autre.");
+        showAlert("Attention", "Ce nom est déjà utilisé, veuillez en choisir un autre.");
         return;
       }
       // On met à jour localStorage et Firestore
