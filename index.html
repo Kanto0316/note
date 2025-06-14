@@ -153,6 +153,10 @@
       gap: 6px;
       align-items: center;
     }
+    .note-meta-time {
+      font-size: 0.85em;
+      font-style: italic;
+    }
 
     /* Message quand aucune note n'est disponible */
     .aucune-note {
@@ -610,7 +614,7 @@
       if (hours < 24) return `Il y a ${hours} h`;
       if (days === 1) return "Hier";
       if (days < 7) return `Il y a ${days} jours`;
-      return date.toLocaleDateString();
+      return date.toLocaleDateString('fr-FR');
     }
 
     function updateAllRelativeTimes() {
