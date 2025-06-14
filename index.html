@@ -129,7 +129,6 @@
       border: 1px solid #ccc;
       border-radius: 6px;
       margin-bottom: 8px;
-      padding-bottom: 1.5rem;   /* espace pour la date et l’auteur */
     }
     .note:last-child {
       margin-bottom: 0;
@@ -146,19 +145,13 @@
       cursor: pointer;
       z-index: 2;
     }
-    .date-modif {
-      position: absolute;
-      bottom: 0.5rem;
-      right: 0.5rem;
-      font-size: 0.8rem;
-      color: #555;
-    }
-    .auteur {
-      position: absolute;
-      bottom: 0.5rem;
-      left: 0.5rem;
-      font-size: 0.8rem;
-      color: #333;
+    .note-meta {
+      font-size: 0.85em;
+      color: #666;
+      margin-top: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     /* Message quand aucune note n'est disponible */
@@ -402,16 +395,6 @@
   }
   */
 
-  /* Espace sous le contenu de la note pour le nom d'utilisateur */
-  .note .contenu {
-    margin-bottom: 1.5rem;
-  }
-
-
-  /* Ajustement espacement bottom pour éviter chevauchement user */
-  .note {
-    padding-bottom: 3rem !important;
-  }
 
   /* Toast message */
   #toast {
@@ -615,6 +598,22 @@
       });
     }
 
+    function getRelativeTime(timestamp) {
+      const now = new Date();
+      const date = timestamp.toDate();
+      const diff = now - date;
+
+      const seconds = Math.floor(diff / 1000);
+      const minutes = Math.floor(diff / (1000 * 60));
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+      if (seconds < 60) return "À l'instant";
+      if (minutes < 60) return `Il y a ${minutes} min`;
+      if (hours < 24) return `Il y a ${hours} h`;
+      return `Il y a ${days} j`;
+    }
+
     // Afficher un message toast
     function showToast(msg) {
       const toast = document.getElementById("toast");
@@ -678,19 +677,12 @@
           divNote.appendChild(btnSupprimer);
         }
 
-        // Date de modification
-        const spanDate = document.createElement("div");
-        spanDate.className = "date-modif";
-        spanDate.textContent = formaterDate(note.dateModification);
-
-        // Auteur
-        const spanUser = document.createElement("div");
-        spanUser.className = "auteur";
-        spanUser.textContent = note.auteur || "Inconnu";
-
         divNote.appendChild(parag);
-        divNote.appendChild(spanDate);
-        divNote.appendChild(spanUser);
+
+        const meta = document.createElement("p");
+        meta.className = "note-meta";
+        meta.textContent = `${note.auteur || "Inconnu"} · ${getRelativeTime(note.dateModification)}`;
+        divNote.appendChild(meta);
 
         // Gestion du clic court / long press
         let longPressTimer;
