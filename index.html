@@ -55,21 +55,31 @@
       align-items: center; /* pour aligner verticalement */
       gap: 5px;
       background-color: white;
-      padding: 10px;
+      padding: 8px;
       box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
       border-top: 1px solid #ccc;
       box-sizing: border-box;
       z-index: 999;
+      position: relative;
     }
     #noteInput {
       flex: 1;
       height: 40px;              /* hauteur réduite */
-      padding: 8px;
+      padding: 8px 8px 8px 35px; /* espace pour l'emoji */
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 6px;
       resize: none;
       box-sizing: border-box;
+    }
+    #emojiButton {
+      position: absolute;
+      left: 15px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 10;
     }
     #addButton {
       height: 40px;              /* aligné avec le textarea */
@@ -430,6 +440,7 @@
   <main id="mainContent">
     <!-- Zone de saisie pour une nouvelle note -->
     <div id="inputContainer">
+      <button id="emojiButton">😊</button>
       <textarea id="noteInput" rows="2" placeholder="Écrivez ici…"></textarea>
       <button id="addButton">Ajouter</button>
     </div>
@@ -537,10 +548,17 @@
     // Éléments DOM
     const textarea         = document.getElementById("noteInput");
     const btnAjouter       = document.getElementById("addButton");
+    const emojiBtn         = document.getElementById("emojiButton");
     const listeNotesDiv    = document.getElementById("liste-notes");
     const mainContent      = document.getElementById("mainContent");
     const headerTitle      = document.getElementById("headerTitle");
     const userCountHeader  = document.getElementById("userCountHeader");
+
+    emojiBtn.addEventListener("click", () => {
+      const emoji = "😄";
+      textarea.value += emoji;
+      textarea.focus();
+    });
 
     // Sur mobile, remonter la zone de texte au-dessus du clavier
     textarea.addEventListener("focus", () => {
