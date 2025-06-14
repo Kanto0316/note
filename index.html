@@ -60,7 +60,7 @@
     }
     #noteInput {
       flex: 1;
-      height: 45px;              /* même que le bouton */
+      height: 40px;              /* hauteur réduite */
       padding: 8px;
       font-size: 14px;
       border: 1px solid #ccc;
@@ -69,7 +69,7 @@
       box-sizing: border-box;
     }
     #addButton {
-      height: 45px;              /* même hauteur */
+      height: 40px;              /* aligné avec le textarea */
       padding: 0 16px;
       font-size: 14px;
       border-radius: 6px;
@@ -96,7 +96,7 @@
     .notes-section {
       width: 100%;
       box-sizing: border-box;
-      padding-bottom: 20px; /* espace pour le champ de saisie fixe */
+      padding-bottom: 70px; /* espace pour le champ de saisie fixe */
     }
 
     /* Champ d\'état de recherche désactivé */
@@ -115,7 +115,7 @@
       border: 1px solid #ddd;
       border-radius: 4px;
       padding: 0.5rem;
-      padding-bottom: 80px;
+      padding-bottom: 70px;
     }
     .note {
       padding: 10px;
@@ -631,6 +631,11 @@
       });
     }
 
+    // Faire défiler la page vers le bas pour garder le champ de saisie visible
+    function scrollToBottom() {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }
+
     // Afficher les notes, avec séparation verte, date et auteur,
     // et n’autoriser la suppression qu’aux propres notes
    function renderNotes() {
@@ -751,6 +756,7 @@
         });
       });
       renderNotes();
+      scrollToBottom();
     }, (err) => {
       console.error("Erreur écoute Firestore :", err);
     });
@@ -800,6 +806,7 @@
       ajouterNoteDansFirestore(texte);
       textarea.value = "";
       textarea.focus();
+      scrollToBottom();
     });
 
     searchInput.addEventListener("input", () => {
