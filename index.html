@@ -44,14 +44,7 @@
       opacity: 1;
       pointer-events: auto;
     }
-    footer {
-      text-align: center;
-      padding: 0.5rem;
-      font-size: 0.9rem;
-      color: #666;
-      background-color: #ecf0f1;
-      margin-top: auto;
-    }
+
 
     /* Zone d’ajout de note */
     #nouveau-note {
@@ -60,10 +53,10 @@
       left: 0;
       width: 100%;
       box-sizing: border-box;
-      padding: 0.5rem;
+      padding: 0.75rem;
       display: flex;
-      background-color: #f7f7f7;
-      border-top: 1px solid #ddd;
+      background-color: #fafafa;
+      border-top: 1px solid #ccc;
     }
     #nouveau-note textarea {
       flex: 1;
@@ -505,7 +498,7 @@
     </div>
   </div>
 
-  <footer>Les notes sont stockées en temps réel dans Firestore.</footer>
+
 
   <!-- ========== Scripts Firebase (modulaire) + JS inline ========== -->
   <script type="module">
@@ -554,6 +547,13 @@
     const mainContent      = document.getElementById("mainContent");
     const headerTitle      = document.getElementById("headerTitle");
     const userCountHeader  = document.getElementById("userCountHeader");
+
+    // Sur mobile, remonter la zone de texte au-dessus du clavier
+    textarea.addEventListener("focus", () => {
+      setTimeout(() => {
+        textarea.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 300);
+    });
 
     const modalOverlay     = document.getElementById("modalOverlay");
     const confirmDeleteBtn = document.getElementById("confirmDelete");
@@ -733,8 +733,8 @@
       }, 0);
     }
 
-    // Écoute Firestore, tri par dateModification descendante
-    const qNotes = query(notesCollection, orderBy("dateModification", "desc"));
+    // Écoute Firestore, tri par date de création croissante
+    const qNotes = query(notesCollection, orderBy("dateCreation"));
     onSnapshot(qNotes, (snapshot) => {
       notesLocales = [];
       snapshot.forEach((docSnapshot) => {
