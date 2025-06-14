@@ -388,14 +388,9 @@
       <button id="btnAjouter">Ajouter</button>
     </div>
 
-    <!-- Champ de recherche désactivé -->
-    <!--
-    <div class="search-wrapper">
-      <input type="text" id="recherche" class="recherche" placeholder="Recherche rapide…" />
+    <div class="search-container">
+      <input type="text" id="recherche" placeholder="Recherche rapide…" />
     </div>
-
-    <div id="etatRecherche"></div>
-    -->
 
     <!-- Zone d’affichage des notes (multiligne) -->
     <div id="liste-notes">
@@ -492,6 +487,8 @@
     const confirmDeleteBtn = document.getElementById("confirmDelete");
     const cancelDeleteBtn  = document.getElementById("cancelDelete");
 
+    const searchInput      = document.getElementById("recherche");
+
     const modalNameOverlay = document.getElementById("modalNameOverlay");
     const inputUserName    = document.getElementById("inputUserName");
     const okNameBtn        = document.getElementById("okName");
@@ -505,6 +502,7 @@
     let idNoteToDelete = null;
     let notesLocales   = [];
     let userName       = "";
+    let searchTerm    = "";
 
     // Générer 4 lettres aléatoires
     function randomLetters(n) {
@@ -531,12 +529,18 @@
 
     // Afficher les notes, avec séparation verte, date et auteur,
     // et n’autoriser la suppression qu’aux propres notes
-    function renderNotes() {
-      listeNotesDiv.innerHTML = "";
+   function renderNotes() {
+     listeNotesDiv.innerHTML = "";
 
+      const filtre = searchTerm.toLowerCase();
       let nbAffichees = 0;
 
       notesLocales.forEach((note) => {
+        if (filtre &&
+            !note.contenu.toLowerCase().includes(filtre) &&
+            !(note.auteur && note.auteur.toLowerCase().includes(filtre))) {
+          return;
+        }
 
         const divNote = document.createElement("div");
         divNote.className = "note";
@@ -697,6 +701,11 @@
       ajouterNoteDansFirestore(texte);
       textarea.value = "";
       textarea.focus();
+    });
+
+    searchInput.addEventListener("input", () => {
+      searchTerm = searchInput.value.trim();
+      renderNotes();
     });
 
     // Afficher toutes les notes dès le chargement
