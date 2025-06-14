@@ -60,7 +60,6 @@
       border-top: 1px solid #ccc;
       box-sizing: border-box;
       z-index: 999;
-      position: relative;
     }
     #noteInput {
       flex: 1;
@@ -80,6 +79,25 @@
       font-size: 18px;
       cursor: pointer;
       z-index: 10;
+    }
+    .emoji-picker {
+      position: absolute;
+      bottom: 50px;
+      left: 8px;
+      display: none;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+      padding: 4px;
+      z-index: 20;
+    }
+    .emoji-picker button {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 2px 4px;
     }
     #addButton {
       height: 40px;              /* aligné avec le textarea */
@@ -440,9 +458,20 @@
   <main id="mainContent">
     <!-- Zone de saisie pour une nouvelle note -->
     <div id="inputContainer">
-      <button id="emojiButton">😊</button>
+      <button id="emojiButton">🥰</button>
       <textarea id="noteInput" rows="2" placeholder="Écrivez ici…"></textarea>
       <button id="addButton">Ajouter</button>
+      <div id="emojiPicker" class="emoji-picker">
+        <button data-emoji="🥰">🥰</button>
+        <button data-emoji="😍">😍</button>
+        <button data-emoji="😂">😂</button>
+        <button data-emoji="😎">😎</button>
+        <button data-emoji="💡">💡</button>
+        <button data-emoji="😢">😢</button>
+        <button data-emoji="❤️">❤️</button>
+        <button data-emoji="✅">✅</button>
+        <button data-emoji="❌">❌</button>
+      </div>
     </div>
 
     <div class="notes-section">
@@ -549,15 +578,34 @@
     const textarea         = document.getElementById("noteInput");
     const btnAjouter       = document.getElementById("addButton");
     const emojiBtn         = document.getElementById("emojiButton");
+    const emojiPicker      = document.getElementById("emojiPicker");
     const listeNotesDiv    = document.getElementById("liste-notes");
     const mainContent      = document.getElementById("mainContent");
     const headerTitle      = document.getElementById("headerTitle");
     const userCountHeader  = document.getElementById("userCountHeader");
 
-    emojiBtn.addEventListener("click", () => {
-      const emoji = "😄";
-      textarea.value += emoji;
+    emojiBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      emojiPicker.style.display =
+        emojiPicker.style.display === "block" ? "none" : "block";
+    });
+
+    emojiPicker.addEventListener("click", (e) => {
+      const emoji = e.target.getAttribute("data-emoji");
+      if (!emoji) return;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      textarea.value = text.slice(0, start) + emoji + text.slice(end);
+      textarea.selectionStart = textarea.selectionEnd = start + emoji.length;
       textarea.focus();
+      emojiPicker.style.display = "none";
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
+        emojiPicker.style.display = "none";
+      }
     });
 
     // Sur mobile, remonter la zone de texte au-dessus du clavier
