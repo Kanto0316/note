@@ -69,7 +69,7 @@
     #noteInput {
       flex: 1;
       height: 40px;              /* hauteur réduite */
-      padding: 8px 40px 8px 3.2em; /* laisse plus d'espace pour l'emoji et le compteur */
+      padding: 8px 50px 20px 3.2em; /* espace pour l'emoji et le compteur */
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 6px;
@@ -78,10 +78,11 @@
     }
     .char-counter {
       position: absolute;
-      bottom: 6px;
+      bottom: 4px;
       right: 10px;
-      font-size: 10px;
+      font-size: 11px;
       color: #888;
+      font-style: italic;
       pointer-events: none;
     }
     #emojiButton {
@@ -398,12 +399,16 @@
       max-width: 90%;
       width: 400px;
       text-align: center;
+      position: relative;
+    }
+    .textarea-wrapper {
+      position: relative;
     }
     #modalNoteContent textarea {
       width: 100%;
       box-sizing: border-box;
       font-size: 1rem;
-      padding: 0.5rem;
+      padding: 0.5rem 0.5rem 1.5rem 0.5rem;
       border: 1px solid #ccc;
       border-radius: 4px;
       resize: vertical;
@@ -583,7 +588,10 @@
   <!-- Modal d'édition de note -->
   <div id="modalNoteOverlay">
     <div id="modalNoteContent">
-      <textarea id="noteTextarea" rows="5" maxlength="600"></textarea>
+      <div class="textarea-wrapper">
+        <textarea id="noteTextarea" rows="5" maxlength="600"></textarea>
+        <div id="modalCharCounter" class="char-counter">0 / 600</div>
+      </div>
       <div class="modal-buttons">
         <button class="modal-btn save" id="saveNote">Sauvegarder</button>
         <button class="modal-btn cancel" id="cancelNote">Annuler</button>
@@ -684,6 +692,10 @@
       charCounter.textContent = `${textarea.value.length} / 600`;
     });
 
+    noteTextarea.addEventListener("input", () => {
+      modalCharCounter.textContent = `${noteTextarea.value.length} / 600`;
+    });
+
     // Sur mobile, remonter la zone de texte au-dessus du clavier
     textarea.addEventListener("focus", () => {
       setTimeout(() => {
@@ -711,6 +723,8 @@
 
     const modalNoteOverlay   = document.getElementById("modalNoteOverlay");
     const noteTextarea       = document.getElementById("noteTextarea");
+    const modalCharCounter   = document.getElementById("modalCharCounter");
+    modalCharCounter.textContent = `${noteTextarea.value.length} / 600`;
     const saveNoteBtn        = document.getElementById("saveNote");
     const cancelNoteBtn      = document.getElementById("cancelNote");
 
@@ -922,6 +936,7 @@
       if (note.auteur !== userName && userName !== "Admin") return;
       currentNoteId = note.id;
       noteTextarea.value = note.contenu;
+      modalCharCounter.textContent = `${noteTextarea.value.length} / 600`;
       modalNoteOverlay.style.display = "flex";
       body.classList.add("modal-open");
       setTimeout(() => {
@@ -1041,17 +1056,20 @@
       modifierNoteDansFirestore(currentNoteId, nouveauTexte);
       currentNoteId = null;
       modalNoteOverlay.style.display = "none";
+      modalCharCounter.textContent = "0 / 600";
       body.classList.remove("modal-open");
     };
     cancelNoteBtn.onclick = () => {
       currentNoteId = null;
       modalNoteOverlay.style.display = "none";
+      modalCharCounter.textContent = "0 / 600";
       body.classList.remove("modal-open");
     };
     modalNoteOverlay.onclick = (e) => {
       if (e.target === modalNoteOverlay) {
         currentNoteId = null;
         modalNoteOverlay.style.display = "none";
+        modalCharCounter.textContent = "0 / 600";
         body.classList.remove("modal-open");
       }
     };
