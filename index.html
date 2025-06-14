@@ -111,17 +111,24 @@
     }
 
     /* Container de recherche */
-    .search-container {
-      margin-bottom: 0.75rem;
-    }
-    #recherche {
-      width: 100%;
-      padding: 0.5rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
+      .search-container {
+        margin-bottom: 0.75rem;
+      }
+      #recherche {
+        width: 100%;
+        padding: 0.5rem;
+        font-size: 1rem;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      #noteCount {
+        margin-top: 4px;
+        font-size: 12px;
+        font-style: italic;
+        color: #888;
+        text-align: left;
+      }
 
     /* Conteneur regroupant recherche et liste pour un alignement commun */
     .notes-section {
@@ -477,6 +484,7 @@
     <div class="notes-section">
       <div class="search-container">
         <input type="text" id="recherche" placeholder="Recherche rapide…" />
+        <div id="noteCount">0 élément</div>
       </div>
 
       <!-- Zone d’affichage des notes (multiligne) -->
@@ -583,6 +591,7 @@
     const mainContent      = document.getElementById("mainContent");
     const headerTitle      = document.getElementById("headerTitle");
     const userCountHeader  = document.getElementById("userCountHeader");
+    const noteCountDiv     = document.getElementById("noteCount");
 
     emojiBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -832,6 +841,7 @@
     const qNotes = query(notesCollection, orderBy("dateCreation"));
     onSnapshot(qNotes, (snapshot) => {
       notesLocales = [];
+      noteCountDiv.textContent = `${snapshot.size} élément${snapshot.size > 1 ? "s" : ""}`;
       snapshot.forEach((docSnapshot) => {
         const data = docSnapshot.data();
         notesLocales.push({
