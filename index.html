@@ -147,10 +147,11 @@
     }
     .note-meta {
       font-size: 0.75rem;
-      color: #888;
+      color: #666;
       margin-top: 4px;
       display: flex;
       gap: 6px;
+      align-items: center;
     }
 
     /* Message quand aucune note n'est disponible */
@@ -597,21 +598,32 @@
       });
     }
 
-    function getRelativeTime(timestamp) {
+    function formatRelativeTime(date) {
       const now = new Date();
-      const date = timestamp.toDate();
-      const diff = now - date;
+      const seconds = Math.floor((now - date) / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
 
-      const seconds = Math.floor(diff / 1000);
-      const minutes = Math.floor(diff / (1000 * 60));
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-      if (seconds < 60) return "À l'instant";
+      if (seconds < 60) return "À l\u2019instant";
       if (minutes < 60) return `Il y a ${minutes} min`;
       if (hours < 24) return `Il y a ${hours} h`;
-      return `Il y a ${days} j`;
+      if (days === 1) return "Hier";
+      if (days < 7) return `Il y a ${days} jours`;
+      return date.toLocaleDateString();
     }
+
+    function updateAllRelativeTimes() {
+      document.querySelectorAll(".note-meta-time").forEach(el => {
+        const timestamp = el.getAttribute("data-timestamp");
+        if (!timestamp) return;
+        const date = new Date(parseInt(timestamp));
+        el.textContent = formatRelativeTime(date);
+      });
+    }
+
+    setInterval(updateAllRelativeTimes, 30000);
+    window.addEventListener("load", updateAllRelativeTimes);
 
     // Afficher un message toast
     function showToast(msg) {
@@ -680,7 +692,15 @@
 
         const meta = document.createElement("p");
         meta.className = "note-meta";
-        meta.textContent = `${note.auteur || "Inconnu"} · ${getRelativeTime(note.dateModification)}`;
+        meta.textContent = `${note.auteur || "Inconnu"} · `;
+
+        const timeEl = document.createElement("span");
+        timeEl.className = "note-meta-time";
+        const ts = note.createdAt ? note.createdAt : (note.dateModification ? note.dateModification.toMillis() : Date.now());
+        timeEl.setAttribute("data-timestamp", ts.toString());
+        timeEl.textContent = formatRelativeTime(new Date(ts));
+        meta.appendChild(timeEl);
+
         divNote.appendChild(meta);
 
         // Gestion du clic court / long press
@@ -722,6 +742,8 @@
         aucune.textContent = "Aucune note";
         listeNotesDiv.appendChild(aucune);
       }
+
+      updateAllRelativeTimes();
     }
 
     // Passer en mode édition via modal
@@ -746,7 +768,8 @@
           id: docSnapshot.id,
           contenu: data.contenu || "",
           dateModification: data.dateModification || data.dateCreation,
-          auteur: data.auteur || "Inconnu"
+          auteur: data.auteur || "Inconnu",
+          createdAt: data.createdAt ?? (data.dateModification ? data.dateModification.toMillis() : Date.now())
         });
       });
       renderNotes();
@@ -762,7 +785,8 @@
           contenu: texte,
           dateCreation: serverTimestamp(),
           dateModification: serverTimestamp(),
-          auteur: userName
+          auteur: userName,
+          createdAt: Date.now()
         });
       } catch (err) {
         console.error("Erreur ajout note :", err);
