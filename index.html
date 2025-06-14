@@ -12,10 +12,15 @@
       font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
+      padding-bottom: 5rem;
       background-color: #f7f7f7;
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+    }
+
+    body.modal-open #nouveau-note {
+      position: static;
     }
     header {
       position: relative;
@@ -50,11 +55,19 @@
 
     /* Zone d’ajout de note */
     #nouveau-note {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.5rem;
       display: flex;
-      margin-bottom: 0.5rem;
+      background-color: #f7f7f7;
+      border-top: 1px solid #ddd;
     }
     #nouveau-note textarea {
       flex: 1;
+      width: 100%;
       resize: vertical;
       padding: 0.5rem;
       font-size: 1rem;
@@ -553,6 +566,8 @@
     const okNameBtn        = document.getElementById("okName");
     const cancelNameBtn    = document.getElementById("cancelName");
 
+    const body             = document.body;
+
       const modalEditOverlay   = document.getElementById("modalEditOverlay");
       const inputEditUserName  = document.getElementById("inputEditUserName");
       const okEditNameBtn      = document.getElementById("okEditName");
@@ -646,6 +661,7 @@
             e.stopPropagation();
             idNoteToDelete = note.id;
             modalOverlay.style.display = "flex";
+            body.classList.add("modal-open");
           };
           divNote.appendChild(btnSupprimer);
         }
@@ -711,6 +727,7 @@
       currentNoteId = note.id;
       noteTextarea.value = note.contenu;
       modalNoteOverlay.style.display = "flex";
+      body.classList.add("modal-open");
       setTimeout(() => {
         noteTextarea.focus();
       }, 0);
@@ -796,15 +813,18 @@
         idNoteToDelete = null;
       }
       modalOverlay.style.display = "none";
+      body.classList.remove("modal-open");
     };
     cancelDeleteBtn.onclick = () => {
       idNoteToDelete = null;
       modalOverlay.style.display = "none";
+      body.classList.remove("modal-open");
     };
     modalOverlay.onclick = (e) => {
       if (e.target === modalOverlay) {
         idNoteToDelete = null;
         modalOverlay.style.display = "none";
+        body.classList.remove("modal-open");
       }
     };
 
@@ -819,15 +839,18 @@
       modifierNoteDansFirestore(currentNoteId, nouveauTexte);
       currentNoteId = null;
       modalNoteOverlay.style.display = "none";
+      body.classList.remove("modal-open");
     };
     cancelNoteBtn.onclick = () => {
       currentNoteId = null;
       modalNoteOverlay.style.display = "none";
+      body.classList.remove("modal-open");
     };
     modalNoteOverlay.onclick = (e) => {
       if (e.target === modalNoteOverlay) {
         currentNoteId = null;
         modalNoteOverlay.style.display = "none";
+        body.classList.remove("modal-open");
       }
     };
 
@@ -880,6 +903,7 @@
 
       // Sinon, on affiche le modal
       modalNameOverlay.style.display = "flex";
+      body.classList.add("modal-open");
       inputUserName.value = "";
 
       return new Promise((resolve) => {
@@ -904,6 +928,7 @@
           document.title = userName;
           headerTitle.childNodes[0].textContent = userName;
           modalNameOverlay.style.display = "none";
+          body.classList.remove("modal-open");
           mainContent.classList.add("active");
           resolve();
         };
@@ -917,6 +942,7 @@
           document.title = userName;
           headerTitle.childNodes[0].textContent = userName;
           modalNameOverlay.style.display = "none";
+          body.classList.remove("modal-open");
           mainContent.classList.add("active");
           resolve();
         };
@@ -927,6 +953,7 @@
     headerTitle.addEventListener("click", () => {
       inputEditUserName.value = userName;
       modalEditOverlay.style.display = "flex";
+      body.classList.add("modal-open");
     });
 
     // Gérer la modification du nom
@@ -967,14 +994,17 @@
       await retirerPresence();
 
       modalEditOverlay.style.display = "none";
+      body.classList.remove("modal-open");
     };
 
     cancelEditNameBtn.onclick = () => {
       modalEditOverlay.style.display = "none";
+      body.classList.remove("modal-open");
     };
     modalEditOverlay.onclick = (e) => {
       if (e.target === modalEditOverlay) {
         modalEditOverlay.style.display = "none";
+        body.classList.remove("modal-open");
       }
     };
 
