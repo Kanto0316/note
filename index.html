@@ -83,13 +83,15 @@
       border-radius: 4px;
     }
 
-    /* Zone d’affichage du mot recherché */
+    /* Champ d\'état de recherche désactivé */
+    /*
     #etatRecherche {
       font-size: 0.9rem;
       color: #333;
       margin-bottom: 0.75rem;
       min-height: 1.2rem;
     }
+    */
 
     /* Liste des notes (multiligne) */
     #liste-notes {
@@ -147,10 +149,7 @@
       font-style: italic;
     }
 
-    /* Style pour le terme surligné */
-    .highlight {
-      background-color: yellow;
-    }
+
 
     /* Styles pour l’édition inline */
     .edit-area {
@@ -347,7 +346,8 @@
       color: #fff;
     }
   
-  /* Wrapper pour aligner comme la zone « Ajouter » */
+  /* Champ de recherche désactivé */
+  /*
   .search-wrapper {
     display: flex;
     width: 100%;
@@ -360,6 +360,7 @@
     border-radius: 4px;
     box-sizing: border-box;
   }
+  */
 
   /* Espace sous le contenu de la note pour le nom d'utilisateur */
   .note .contenu {
@@ -387,13 +388,14 @@
       <button id="btnAjouter">Ajouter</button>
     </div>
 
-    <!-- Container recherche -->
+    <!-- Champ de recherche désactivé -->
+    <!--
     <div class="search-wrapper">
-  <input type="text" id="recherche" class="recherche" placeholder="Recherche rapide…" />
+      <input type="text" id="recherche" class="recherche" placeholder="Recherche rapide…" />
     </div>
 
-    <!-- Zone pour afficher le mot recherché -->
     <div id="etatRecherche"></div>
+    -->
 
     <!-- Zone d’affichage des notes (multiligne) -->
     <div id="liste-notes">
@@ -481,8 +483,6 @@
     // Éléments DOM
     const textarea         = document.getElementById("texte");
     const btnAjouter       = document.getElementById("btnAjouter");
-    const inputRecherche   = document.getElementById("recherche");
-    const etatRechercheDiv = document.getElementById("etatRecherche");
     const listeNotesDiv    = document.getElementById("liste-notes");
     const mainContent      = document.getElementById("mainContent");
     const headerTitle      = document.getElementById("headerTitle");
@@ -532,41 +532,20 @@
     // Afficher les notes, avec séparation verte, date et auteur,
     // et n’autoriser la suppression qu’aux propres notes
     function renderNotes() {
-      const filtre = inputRecherche.value.trim().toLowerCase();
       listeNotesDiv.innerHTML = "";
-
-      if (filtre) {
-        etatRechercheDiv.textContent = `Résultats pour : “${filtre}”`;
-      } else {
-        etatRechercheDiv.textContent = "";
-      }
 
       let nbAffichees = 0;
 
       notesLocales.forEach((note) => {
-        if (filtre && !note.contenu.toLowerCase().includes(filtre)) {
-          return;
-        }
 
         const divNote = document.createElement("div");
         divNote.className = "note";
 
-        // Paragraphe avec surlignage du filtre
+        // Paragraphe avec le contenu de la note
         const parag = document.createElement("p");
         parag.style.margin = "0";
         parag.style.cursor = "pointer";
-
-        if (filtre) {
-          const escapedFiltre = filtre.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\$&");
-          const regex = new RegExp(`(${escapedFiltre})`, "gi");
-          const contenuSurligne = note.contenu.replace(
-            regex,
-            '<span class="highlight">$1</span>'
-          );
-          parag.innerHTML = contenuSurligne;
-        } else {
-          parag.textContent = note.contenu;
-        }
+        parag.textContent = note.contenu;
         parag.onclick = () => {
           passerEnModeEdition(divNote, note);
         };
@@ -720,16 +699,8 @@
       textarea.focus();
     });
 
-    // Recherche en temps réel
-    inputRecherche.addEventListener("input", renderNotes);
-
     // Afficher toutes les notes dès le chargement
-    function afficherToutesLesNotes() {
-      inputRecherche.value = "";
-      renderNotes();
-    }
-
-    window.addEventListener("load", afficherToutesLesNotes);
+    window.addEventListener("load", renderNotes);
 
     // Gestion du modal de suppression
     confirmDeleteBtn.onclick = () => {
