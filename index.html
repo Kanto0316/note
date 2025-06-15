@@ -566,7 +566,7 @@
   <div id="modalEditOverlay" class="modal-backdrop">
     <div id="modalEditContent" class="modal">
       <h2>Modifier votre nom ?</h2>
-      <input type="text" id="inputEditUserName" maxlength="20" />
+      <input type="text" id="inputEditUserName" maxlength="15" />
       <div class="modal-buttons">
         <button class="modal-btn ok" id="okEditName">OK</button>
         <button class="modal-btn cancel" id="cancelEditName">Annuler</button>
@@ -699,6 +699,12 @@
       const inputEditUserName  = document.getElementById("inputEditUserName");
       const okEditNameBtn      = document.getElementById("okEditName");
       const cancelEditNameBtn  = document.getElementById("cancelEditName");
+
+      inputEditUserName.addEventListener('input', () => {
+        if (inputEditUserName.value.length > 15) {
+          inputEditUserName.value = inputEditUserName.value.slice(0, 15);
+        }
+      });
 
     const modalNoteOverlay   = document.getElementById("modalNoteOverlay");
     const noteTextarea       = document.getElementById("noteTextarea");
