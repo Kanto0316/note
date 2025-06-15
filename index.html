@@ -844,7 +844,7 @@
     // Copier le texte dans le presse-papiers
     function copyToClipboard(text) {
       navigator.clipboard.writeText(text).then(() => {
-        showToast("✅ Succès : note copiée dans le presse-papiers");
+        showToast("✅ Succès ");
       }).catch(err => {
         console.error("Erreur copie", err);
       });
