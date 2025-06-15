@@ -289,6 +289,13 @@
       font-size: 0.85em;
       font-style: italic;
     }
+    .viewed-indicator {
+      font-size: 0.75rem;
+      font-style: italic;
+      color: #666;
+      float: right;
+      margin-left: 1rem;
+    }
 
     /* Message quand aucune note n'est disponible */
     .aucune-note {
@@ -721,7 +728,9 @@
       query,
       where,
       getDocs,
-      serverTimestamp
+      serverTimestamp,
+      getDoc,
+      arrayUnion
     } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
     // Configuration Firebase
@@ -839,6 +848,16 @@
     let notesLocales   = [];
     let userName       = "";
     let searchTerm    = "";
+    const viewUnsubscribers = {};
+
+    const viewObserver = new IntersectionObserver((entries) => {
+      if (!navigator.onLine) return;
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          marquerCommeVu(entry.target.dataset.noteId);
+        }
+      });
+    }, { threshold: 1.0 });
 
     // Générer 4 lettres aléatoires
     function randomLetters(n) {
@@ -938,8 +957,11 @@
 
     // Afficher les notes, avec séparation verte, date et auteur,
     // et n’autoriser la suppression qu’aux propres notes
-   function renderNotes() {
-     listeNotesDiv.innerHTML = "";
+  function renderNotes() {
+    viewObserver.disconnect();
+    Object.values(viewUnsubscribers).forEach(unsub => unsub());
+    for (const k in viewUnsubscribers) delete viewUnsubscribers[k];
+    listeNotesDiv.innerHTML = "";
 
       const filtre = searchTerm.toLowerCase();
       let nbAffichees = 0;
@@ -953,6 +975,8 @@
 
         const divNote = document.createElement("div");
         divNote.className = "note";
+        divNote.dataset.noteId = note.id;
+        viewObserver.observe(divNote);
 
         // Paragraphe avec le contenu de la note
         const parag = document.createElement("p");
@@ -988,8 +1012,26 @@
         timeEl.setAttribute("data-timestamp", ts.toString());
         timeEl.textContent = formatRelativeTime(new Date(ts));
         meta.appendChild(timeEl);
+        const viewSpan = document.createElement("span");
+        viewSpan.className = "viewed-indicator";
+        viewSpan.id = `vu-${note.id}`;
+        meta.appendChild(viewSpan);
 
         divNote.appendChild(meta);
+
+        const noteRef = doc(db, "notes", note.id);
+        const unsub = onSnapshot(noteRef, (docSnap) => {
+          const viewedBy = docSnap.data().viewedBy || [];
+          const authors = viewedBy.filter(v => v !== userName);
+          let text = "";
+          if (authors.length === 1) {
+            text = `Vu par ${authors[0]}`;
+          } else if (authors.length > 1) {
+            text = `Vu par ${authors[0]} et ${authors.length - 1} autre(s) personne(s)`;
+          }
+          viewSpan.textContent = text;
+        });
+        viewUnsubscribers[note.id] = unsub;
 
         // Gestion du clic court / long press
         let longPressTimer;
@@ -1103,6 +1145,18 @@
         });
       } catch (err) {
         console.error("Erreur modification note :", err);
+      }
+    }
+
+    async function marquerCommeVu(noteId) {
+      const noteRef = doc(db, "notes", noteId);
+      const user = localStorage.getItem("userName") || userName;
+      const snap = await getDoc(noteRef);
+      if (!snap.exists()) return;
+      const data = snap.data();
+      const viewedBy = data.viewedBy || [];
+      if (!viewedBy.includes(user)) {
+        await updateDoc(noteRef, { viewedBy: arrayUnion(user) });
       }
     }
 
