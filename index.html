@@ -677,7 +677,7 @@
   <div id="modalNoteOverlay" class="modal-backdrop">
     <div id="modalNoteContent" class="modal">
       <div class="textarea-wrapper">
-        <textarea id="noteTextarea" rows="5" maxlength="600"></textarea>
+        <textarea id="noteTextarea" rows="5" maxlength="2000"></textarea>
       </div>
       <div class="modal-buttons">
         <button class="modal-btn save" id="saveNote">Sauvegarder</button>
@@ -690,7 +690,7 @@
   <div id="alertModalOverlay" class="modal-backdrop">
     <div id="alertModalContent" class="modal">
       <h2>Attention</h2>
-      <p>Vous ne pouvez pas ajouter une note vide.</p>
+      <p>Note vide !</p>
       <button id="alertOk">OK</button>
     </div>
   </div>
@@ -1115,7 +1115,7 @@
     btnAjouter.addEventListener("click", () => {
       const texte = textarea.value.trim();
       if (texte === "") {
-        showAlert("Attention", "Vous ne pouvez pas ajouter une note vide.");
+        showAlert("Attention", "Note vide.");
         return;
       }
       ajouterNoteDansFirestore(texte);
@@ -1246,7 +1246,7 @@
           if (nomEntre !== "") {
             const existe = await nomExiste(nomEntre);
             if (existe) {
-              showAlert("Attention", "Ce nom est déjà utilisé, veuillez en choisir un autre.");
+              showAlert("Attention", "Nom est déjà utilisé.");
               return;
             }
             userName = nomEntre;
