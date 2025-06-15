@@ -294,8 +294,6 @@
     }
 
 
-
-
     /* Modal de confirmation */
     #modalOverlay {
       display: none;
@@ -599,7 +597,6 @@
       <div class="header-texts">
         <div id="headerTitle" class="name">Admin</div>
         <div id="noteCount" class="count">0 élément</div>
-        <div id="userCountHeader" class="count"></div>
       </div>
     </div>
     <input type="text" id="recherche" class="search-bar" placeholder="Recherche rapide..." />
@@ -711,7 +708,6 @@
       deleteDoc,
       updateDoc,
       doc,
-      setDoc,
       onSnapshot,
       orderBy,
       query,
@@ -741,7 +737,6 @@
     // Références des collections
     const notesCollection    = collection(db, "notes");
     const usersCollection    = collection(db, "users");
-    const presenceCollection = collection(db, "presence");
 
     // Éléments DOM
     const textarea         = document.getElementById("noteInput");
@@ -751,7 +746,6 @@
     const listeNotesDiv    = document.getElementById("liste-notes");
     const mainContent      = document.getElementById("mainContent");
     const headerTitle      = document.getElementById("headerTitle");
-    const userCountHeader  = document.getElementById("userCountHeader");
     const noteCountDiv     = document.getElementById("noteCount");
     const avatarCircle     = document.querySelector(".header-avatar");
 
@@ -1220,35 +1214,7 @@
       }
     }
 
-    // Gestion de la présence des utilisateurs
-    async function mettreAJourPresence() {
-      try {
-        await setDoc(doc(presenceCollection, userName), {
-          name: userName,
-          timestamp: serverTimestamp()
-        });
-      } catch (err) {
-        console.error("Erreur présence :", err);
-      }
-    }
 
-    async function retirerPresence() {
-      try {
-        await deleteDoc(doc(presenceCollection, userName));
-      } catch (err) {
-        console.error("Erreur retirer présence :", err);
-      }
-    }
-
-    function ecouterPresence() {
-      onSnapshot(presenceCollection, (snapshot) => {
-        if (userCountHeader) {
-          userCountHeader.textContent = `${snapshot.size} en ligne`;
-        }
-      });
-    }
-
-    // Écoute en temps réel de la collection 'presence'
 
     // Gérer la saisie du nom au chargement
     async function demanderNomUtilisateur() {
@@ -1262,8 +1228,6 @@
         updateAvatar();
         modalNameOverlay.style.display = "none";
         mainContent.classList.add("active");
-        ecouterPresence();
-        await mettreAJourPresence();
         return;
       }
 
@@ -1302,8 +1266,6 @@
           body.classList.remove("modal-open");
           document.body.style.overflow = '';
           mainContent.classList.add("active");
-          ecouterPresence();
-          await mettreAJourPresence();
           resolve();
         };
 
@@ -1320,8 +1282,6 @@
           body.classList.remove("modal-open");
           document.body.style.overflow = '';
           mainContent.classList.add("active");
-          ecouterPresence();
-          await mettreAJourPresence();
           resolve();
         };
       });
@@ -1373,9 +1333,6 @@
       // Supprimer l’ancien nom dans la collection 'users'
       await supprimerUtilisateurParNom(ancienNom);
 
-      // Mettre à jour présence Firestore : supprimer ancienne doc, créer nouvelle
-      await retirerPresence();
-      await mettreAJourPresence();
 
       modalEditOverlay.style.display = "none";
       body.classList.remove("modal-open");
@@ -1395,8 +1352,6 @@
       }
     };
 
-    // À la fermeture ou navigation hors de la page, on retire la présence
-    window.addEventListener("beforeunload", retirerPresence);
 
     // Au chargement de la page, demander le nom avant toute interaction
   window.addEventListener("DOMContentLoaded", async () => {
