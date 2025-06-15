@@ -16,6 +16,7 @@
       display: flex;
       flex-direction: column;
       min-height: 100vh;
+      padding-top: 150px; /* Adapter selon la hauteur du header */
     }
 
     body.modal-open {
@@ -50,25 +51,48 @@
       padding-left: 3.2em; /* augmente l'espacement pour laisser de la place à l'emoji */
       box-sizing: border-box;
     }
-    header {
-      position: relative;
-      background-color: #2c3e50;
-      color: #fff;
-      padding: 1rem;
-      text-align: center;
-      font-size: 1.5rem;
-      cursor: pointer; /* cliquable pour modifier le nom */
-    }
-    .header-fixed {
-      position: sticky;
+    .header-wrapper {
+      position: fixed;
       top: 0;
-      z-index: 1000;
+      left: 0;
+      width: 100%;
+      background-color: white; /* ⚠️ Garder couleur blanche */
+      z-index: 999;
+      padding: 16px 0;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
-    .header-fixed header,
-    .header-fixed input,
-    .header-fixed #noteCount {
+
+    /* Titre Admin centré */
+    .page-title {
       margin: 0;
+      text-align: center;
+      color: inherit; /* Pas de changement de couleur */
+      cursor: pointer; /* cliquable pour modifier le nom */
+      font-size: 1.5rem;
     }
+
+    /* Texte "xx éléments" centré en italique */
+    #noteCount {
+      text-align: center;
+      font-style: italic;
+      font-size: 0.9em;
+      color: inherit;
+      margin-bottom: 10px;
+    }
+
+    /* Barre de recherche centrée */
+    #recherche {
+      display: block;
+      margin: 0 auto;
+      width: 90%;
+      max-width: 600px;
+      padding: 8px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
     /* Compteur à droite du titre */
     main {
       flex: 1;
@@ -511,12 +535,10 @@
 </head>
 <body>
 
-  <div class="header-fixed">
-    <header id="headerTitle">
-      Bloc-note collaboratif
-    </header>
-    <small id="noteCount">0 élément</small>
-    <input type="text" id="recherche" placeholder="Recherche rapide…" />
+  <div class="header-wrapper">
+    <h1 id="headerTitle" class="page-title">Admin</h1>
+    <div id="noteCount" class="note-count">0 élément</div>
+    <input type="text" id="recherche" class="search-bar" placeholder="Recherche rapide..." />
   </div>
 
   <main id="mainContent">
