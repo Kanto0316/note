@@ -60,29 +60,57 @@
       right: 0;
       background-color: #2c3e50; /* 🎯 Bleu marine */
       z-index: 999;
-      padding: 16px 0;
-      text-align: center;
+      padding: 10px 0;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       will-change: transform;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar-circle {
+      width: 45px;
+      height: 45px;
+      background-color: #ff6b3c;
+      color: #fff;
+      border-radius: 50%;
+      font-weight: bold;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
+      flex-shrink: 0;
+    }
+
+    .header-text {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     /* Titre Admin centré */
     .page-title {
       margin: 0;
-      text-align: center;
       color: white; /* Texte blanc pour contraste */
       cursor: pointer; /* cliquable pour modifier le nom */
-      font-size: 1.5rem;
+      font-size: 20px;
+      font-weight: 600;
     }
 
     /* Texte "xx éléments" centré en italique */
     .note-count {
-      font-style: italic;
-      font-size: 0.9em;
+      margin: 0;
+      font-size: 13px;
       color: #ccc;
-      margin-top: 4px;
-      margin-bottom: 12px;
-      text-align: center;
+      font-style: italic;
     }
 
     /* Barre de recherche centrée */
@@ -542,8 +570,13 @@
 <body>
 
   <div class="header-wrapper">
-    <h1 id="headerTitle" class="page-title">Admin</h1>
-    <div id="noteCount" class="note-count">0 élément</div>
+    <div class="header-content">
+      <div class="avatar-circle">Ad</div>
+      <div class="header-text">
+        <h1 id="headerTitle" class="page-title">Admin</h1>
+        <div id="noteCount" class="note-count">0 élément</div>
+      </div>
+    </div>
     <input type="text" id="recherche" class="search-bar" placeholder="Recherche rapide..." />
   </div>
 
@@ -684,6 +717,15 @@
     const headerTitle      = document.getElementById("headerTitle");
     const userCountHeader  = document.getElementById("userCountHeader");
     const noteCountDiv     = document.getElementById("noteCount");
+    const avatarCircle     = document.querySelector(".avatar-circle");
+
+    function updateAvatar() {
+      if (headerTitle && avatarCircle) {
+        avatarCircle.textContent = headerTitle.textContent.trim().substring(0, 2);
+      }
+    }
+
+    updateAvatar();
 
     emojiBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -1139,6 +1181,7 @@
         document.title = userName;
         // Mettre à jour le texte principal du header sans écraser le compteur
         headerTitle.childNodes[0].textContent = userName;
+        updateAvatar();
         modalNameOverlay.style.display = "none";
         mainContent.classList.add("active");
 
@@ -1176,6 +1219,7 @@
           await creerUtilisateur(userName);
           document.title = userName;
           headerTitle.childNodes[0].textContent = userName;
+          updateAvatar();
           modalNameOverlay.style.display = "none";
           body.classList.remove("modal-open");
           document.body.style.overflow = '';
@@ -1191,6 +1235,7 @@
           await creerUtilisateur(userName);
           document.title = userName;
           headerTitle.childNodes[0].textContent = userName;
+          updateAvatar();
           modalNameOverlay.style.display = "none";
           body.classList.remove("modal-open");
           document.body.style.overflow = '';
@@ -1234,6 +1279,7 @@
       await creerUtilisateur(userName);
       document.title = userName;
       headerTitle.childNodes[0].textContent = userName;
+      updateAvatar();
 
       // Mettre à jour le champ 'auteur' des notes existantes
       const qUpdate = query(notesCollection, where("auteur", "==", ancienNom));
