@@ -252,17 +252,15 @@
       padding: 0.5rem;
       padding-bottom: 70px; /* espace réservé pour ne pas que le contenu passe sous le champ fixe */
     }
-    .note {
-      padding: 10px;
+    .note-item {
       position: relative;
-      white-space: pre-wrap;    /* conserve sauts de ligne */
-      word-break: break-word;   /* retour à la ligne pour mots longs */
-      cursor: default;
       border: 1px solid #ccc;
       border-radius: 6px;
-      margin-bottom: 8px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      background: white;
     }
-    .note:last-child {
+    .note-item:last-child {
       margin-bottom: 0;
       padding-bottom: 0.5rem;
     }
@@ -280,28 +278,18 @@
     .note-meta {
       font-size: 0.75rem;
       color: #666;
-      margin-top: 4px;
-      display: flex;
-      gap: 6px;
-      align-items: center;
+      font-style: italic;
     }
     .note-meta-time {
       font-size: 0.85em;
       font-style: italic;
     }
-    .viewed-indicator {
-      font-size: 0.75rem;
-      font-style: italic;
-      color: #666;
-      float: right;
-      margin-left: 1rem;
-    }
-    .viewby-right {
+    .vu-par-texte {
       position: absolute;
-      right: 0.5rem;
-      bottom: 0.5rem;
+      bottom: 8px;
+      right: 14px;
       font-size: 0.75rem;
-      color: #777;
+      color: #666;
       font-style: italic;
     }
 
@@ -856,7 +844,6 @@
     let notesLocales   = [];
     let userName       = "";
     let searchTerm    = "";
-    const viewUnsubscribers = {};
 
     const viewObserver = new IntersectionObserver((entries) => {
       if (!navigator.onLine) return;
@@ -967,8 +954,6 @@
     // et n’autoriser la suppression qu’aux propres notes
   function renderNotes() {
     viewObserver.disconnect();
-    Object.values(viewUnsubscribers).forEach(unsub => unsub());
-    for (const k in viewUnsubscribers) delete viewUnsubscribers[k];
     listeNotesDiv.innerHTML = "";
 
       const filtre = searchTerm.toLowerCase();
@@ -983,22 +968,44 @@
       filtered.forEach((note, index) => {
 
         const divNote = document.createElement("div");
-        divNote.className = "note";
+        divNote.className = "note-item";
         divNote.dataset.noteId = note.id;
         viewObserver.observe(divNote);
-
-        // Paragraphe avec le contenu de la note
-        const parag = document.createElement("p");
-        parag.style.margin = "0";
-        parag.style.cursor = "pointer";
-        parag.textContent = note.contenu;
-
         let btnSupprimer = null;
-        // Si l’auteur est l’utilisateur courant, on affiche le bouton supprimer
-        if (note.auteur === userName || userName === "Admin") {
-          btnSupprimer = document.createElement("button");
-          btnSupprimer.className = "supprimer";
-          btnSupprimer.innerHTML = "&times;";
+
+        const auteurs = Object.keys(note.vuPar || {});
+        const auteurPrincipal = auteurs[0];
+        const autres = auteurs.length - 1;
+
+        let texteVu = "";
+        if (auteurPrincipal) {
+          texteVu = `Vu par ${auteurPrincipal}`;
+          if (autres > 0) {
+            texteVu += ` et ${autres} autre${autres > 1 ? "s" : ""} personne${autres > 1 ? "s" : ""}`;
+          }
+        }
+
+        const affichageVu = (index === filtered.length - 1 && texteVu)
+          ? `<div class="vu-par-texte">${texteVu}</div>`
+          : "";
+
+        const ts = note.createdAt ? note.createdAt : (note.dateModification ? note.dateModification.toMillis() : Date.now());
+
+        const deleteBtn = (note.auteur === userName || userName === "Admin")
+          ? `<button class="supprimer" data-id="${note.id}">&times;</button>`
+          : "";
+
+        divNote.innerHTML = `
+          <div class="note-content">${note.contenu}</div>
+          <div class="note-meta">
+            ${note.auteur || "Inconnu"} · <span class="note-meta-time" data-timestamp="${ts}">${formatRelativeTime(new Date(ts))}</span>
+          </div>
+          ${deleteBtn}
+          ${affichageVu}
+        `;
+
+        const btnSupprimer = divNote.querySelector('.supprimer');
+        if (btnSupprimer) {
           btnSupprimer.onclick = (e) => {
             e.stopPropagation();
             idNoteToDelete = note.id;
@@ -1006,49 +1013,7 @@
             body.classList.add("modal-open");
             document.body.style.overflow = 'hidden';
           };
-          divNote.appendChild(btnSupprimer);
         }
-
-        divNote.appendChild(parag);
-
-        const meta = document.createElement("p");
-        meta.className = "note-meta";
-        meta.textContent = `${note.auteur || "Inconnu"} · `;
-
-        const timeEl = document.createElement("span");
-        timeEl.className = "note-meta-time";
-        const ts = note.createdAt ? note.createdAt : (note.dateModification ? note.dateModification.toMillis() : Date.now());
-        timeEl.setAttribute("data-timestamp", ts.toString());
-        timeEl.textContent = formatRelativeTime(new Date(ts));
-        meta.appendChild(timeEl);
-        const viewSpan = document.createElement("span");
-        viewSpan.className = "viewed-indicator";
-        viewSpan.id = `vu-${note.id}`;
-        meta.appendChild(viewSpan);
-
-        divNote.appendChild(meta);
-
-        if (index === filtered.length - 1) {
-          const viewDiv = document.createElement("div");
-          viewDiv.className = "viewby-right";
-          viewDiv.id = "viewby-indicator";
-          viewDiv.textContent = "viewby";
-          divNote.appendChild(viewDiv);
-        }
-
-        const noteRef = doc(db, "notes", note.id);
-        const unsub = onSnapshot(noteRef, (docSnap) => {
-          const viewedBy = docSnap.data().viewedBy || [];
-          const authors = viewedBy.filter(v => v !== userName);
-          let text = "";
-          if (authors.length === 1) {
-            text = `Vu par ${authors[0]}`;
-          } else if (authors.length > 1) {
-            text = `Vu par ${authors[0]} et ${authors.length - 1} autre(s) personne(s)`;
-          }
-          viewSpan.textContent = text;
-        });
-        viewUnsubscribers[note.id] = unsub;
 
         // Gestion du clic court / long press
         let longPressTimer;
@@ -1119,7 +1084,8 @@
           contenu: data.contenu || "",
           dateModification: data.dateModification || data.dateCreation,
           auteur: data.auteur || "Inconnu",
-          createdAt: data.createdAt ?? (data.dateModification ? data.dateModification.toMillis() : Date.now())
+          createdAt: data.createdAt ?? (data.dateModification ? data.dateModification.toMillis() : Date.now()),
+          vuPar: data.vuPar || {}
         });
       });
       renderNotes();
@@ -1168,12 +1134,10 @@
     async function marquerCommeVu(noteId) {
       const noteRef = doc(db, "notes", noteId);
       const user = localStorage.getItem("userName") || userName;
-      const snap = await getDoc(noteRef);
-      if (!snap.exists()) return;
-      const data = snap.data();
-      const viewedBy = data.viewedBy || [];
-      if (!viewedBy.includes(user)) {
-        await updateDoc(noteRef, { viewedBy: arrayUnion(user) });
+      try {
+        await updateDoc(noteRef, { [`vuPar.${user}`]: true });
+      } catch (err) {
+        console.error("Erreur mise à jour vuPar:", err);
       }
     }
 
