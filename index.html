@@ -296,6 +296,14 @@
       float: right;
       margin-left: 1rem;
     }
+    .viewby-right {
+      position: absolute;
+      right: 0.5rem;
+      bottom: 0.5rem;
+      font-size: 0.75rem;
+      color: #777;
+      font-style: italic;
+    }
 
     /* Message quand aucune note n'est disponible */
     .aucune-note {
@@ -966,12 +974,13 @@
       const filtre = searchTerm.toLowerCase();
       let nbAffichees = 0;
 
-      notesLocales.forEach((note) => {
-        if (filtre &&
+      const filtered = notesLocales.filter(note => {
+        return !(filtre &&
             !note.contenu.toLowerCase().includes(filtre) &&
-            !(note.auteur && note.auteur.toLowerCase().includes(filtre))) {
-          return;
-        }
+            !(note.auteur && note.auteur.toLowerCase().includes(filtre)));
+      });
+
+      filtered.forEach((note, index) => {
 
         const divNote = document.createElement("div");
         divNote.className = "note";
@@ -1018,6 +1027,14 @@
         meta.appendChild(viewSpan);
 
         divNote.appendChild(meta);
+
+        if (index === filtered.length - 1) {
+          const viewDiv = document.createElement("div");
+          viewDiv.className = "viewby-right";
+          viewDiv.id = "viewby-indicator";
+          viewDiv.textContent = "viewby";
+          divNote.appendChild(viewDiv);
+        }
 
         const noteRef = doc(db, "notes", note.id);
         const unsub = onSnapshot(noteRef, (docSnap) => {
