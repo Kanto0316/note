@@ -18,6 +18,9 @@
       min-height: 100vh;
     }
 
+    body.modal-open {
+      overflow: hidden;
+    }
     body.modal-open #inputContainer {
       position: static;
     }
@@ -917,7 +920,13 @@
       modalNoteOverlay.style.display = "flex";
       body.classList.add("modal-open");
       setTimeout(() => {
-        noteTextarea.focus();
+        if (noteTextarea.focus) {
+          try {
+            noteTextarea.focus({ preventScroll: true });
+          } catch (e) {
+            noteTextarea.focus();
+          }
+        }
       }, 0);
     }
 
