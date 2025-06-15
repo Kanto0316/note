@@ -567,9 +567,33 @@
     opacity: 1;
   }
 
+  /* Loader circulaire */
+  #loader {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 40px;
+    height: 40px;
+    margin: -20px 0 0 -20px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #f46b45;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 9999;
+    background-color: transparent;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
 </style>
 </head>
 <body>
+
+  <div id="loader"></div>
 
   <div class="header-wrapper">
     <div class="header-left">
@@ -774,6 +798,8 @@
     const cancelNameBtn    = document.getElementById("cancelName");
 
     const body             = document.body;
+    const loader           = document.getElementById("loader");
+    loader.style.display   = "block";
 
       const modalEditOverlay   = document.getElementById("modalEditOverlay");
       const inputEditUserName  = document.getElementById("inputEditUserName");
@@ -1028,6 +1054,7 @@
       });
       renderNotes();
       scrollToBottom();
+      loader.style.display = "none";
     }, (err) => {
       console.error("Erreur écoute Firestore :", err);
     });
