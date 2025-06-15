@@ -917,9 +917,12 @@
       if (note.auteur !== userName && userName !== "Admin") return;
       currentNoteId = note.id;
       noteTextarea.value = note.contenu;
+
+      const currentScrollY = window.scrollY;
       modalNoteOverlay.style.display = "flex";
       body.classList.add("modal-open");
-      setTimeout(() => {
+
+      requestAnimationFrame(() => {
         if (noteTextarea.focus) {
           try {
             noteTextarea.focus({ preventScroll: true });
@@ -927,7 +930,8 @@
             noteTextarea.focus();
           }
         }
-      }, 0);
+        window.scrollTo({ top: currentScrollY });
+      });
     }
 
     // Écoute Firestore, tri par date de création croissante
