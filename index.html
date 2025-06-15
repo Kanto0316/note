@@ -284,14 +284,6 @@
       font-size: 0.85em;
       font-style: italic;
     }
-    .vu-par-texte {
-      position: absolute;
-      bottom: 8px;
-      right: 14px;
-      font-size: 0.75rem;
-      color: #666;
-      font-style: italic;
-    }
 
     /* Message quand aucune note n'est disponible */
     .aucune-note {
@@ -974,22 +966,6 @@
         divNote.dataset.noteId = note.id;
         viewObserver.observe(divNote);
 
-        const auteurs = Object.keys(note.vuPar || {});
-        const auteurPrincipal = auteurs[0];
-        const autres = auteurs.length - 1;
-
-        let texteVu = "";
-        if (auteurPrincipal) {
-          texteVu = `Vu par ${auteurPrincipal}`;
-          if (autres > 0) {
-            texteVu += ` et ${autres} autre${autres > 1 ? "s" : ""} personne${autres > 1 ? "s" : ""}`;
-          }
-        }
-
-        const affichageVu = (index === filtered.length - 1 && texteVu)
-          ? `<div class="vu-par-texte">${texteVu}</div>`
-          : "";
-
         const ts = note.createdAt ? note.createdAt : (note.dateModification ? note.dateModification.toMillis() : Date.now());
 
         const deleteBtn = (note.auteur === userName || userName === "Admin")
@@ -1002,7 +978,6 @@
             ${note.auteur || "Inconnu"} · <span class="note-meta-time" data-timestamp="${ts}">${formatRelativeTime(new Date(ts))}</span>
           </div>
           ${deleteBtn}
-          ${affichageVu}
         `;
 
         const btnSupprimer = divNote.querySelector('.supprimer');
