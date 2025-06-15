@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Bloc-note collaboratif</title>
 
   <!-- ========== Style CSS inline ========== -->
@@ -17,6 +17,8 @@
       flex-direction: column;
       min-height: 100vh;
       padding-top: 150px; /* Adapter selon la hauteur du header */
+      overscroll-behavior-y: contain;
+      -webkit-overflow-scrolling: touch;
     }
 
     body.modal-open {
@@ -55,11 +57,13 @@
       position: fixed;
       top: 0;
       left: 0;
-      width: 100%;
+      right: 0;
       background-color: #2c3e50; /* 🎯 Bleu marine */
       z-index: 999;
       padding: 16px 0;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      will-change: transform;
     }
 
     /* Titre Admin centré */
@@ -73,11 +77,12 @@
 
     /* Texte "xx éléments" centré en italique */
     .note-count {
-      text-align: center;
       font-style: italic;
       font-size: 0.9em;
-      color: #ddd; /* Gris clair pour lisibilité */
-      margin-bottom: 10px;
+      color: #ccc;
+      margin-top: 4px;
+      margin-bottom: 12px;
+      text-align: center;
     }
 
     /* Barre de recherche centrée */
@@ -86,11 +91,10 @@
       margin: 0 auto;
       width: 90%;
       max-width: 600px;
-      padding: 8px;
+      padding: 10px;
       font-size: 16px;
       border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
+      border-radius: 6px;
     }
 
     /* Compteur à droite du titre */
@@ -179,18 +183,18 @@
         margin: 0 auto;
         width: 90%;
         max-width: 600px;
-        padding: 8px;
+        padding: 10px;
         font-size: 16px;
         border: 1px solid #ccc;
-        border-radius: 4px;
-        box-sizing: border-box;
+        border-radius: 6px;
       }
       .note-count {
-        text-align: center;
         font-style: italic;
         font-size: 0.9em;
-        color: #ddd;
-        margin-bottom: 10px;
+        color: #ccc;
+        margin-top: 4px;
+        margin-bottom: 12px;
+        text-align: center;
       }
 
     /* Conteneur regroupant recherche et liste pour un alignement commun */
