@@ -59,6 +59,16 @@
       font-size: 1.5rem;
       cursor: pointer; /* cliquable pour modifier le nom */
     }
+    .header-fixed {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .header-fixed header,
+    .header-fixed input,
+    .header-fixed #noteCount {
+      margin: 0;
+    }
     /* Compteur à droite du titre */
     main {
       flex: 1;
@@ -139,10 +149,7 @@
       cursor: pointer;
     }
 
-    /* Container de recherche */
-      .search-container {
-        margin-bottom: 0.75rem;
-      }
+    /* Champ de recherche */
       #recherche {
         width: 100%;
         padding: 0.5rem;
@@ -503,9 +510,13 @@
 </head>
 <body>
 
-  <header id="headerTitle">
-    Bloc-note collaboratif
-  </header>
+  <div class="header-fixed">
+    <header id="headerTitle">
+      Bloc-note collaboratif
+    </header>
+    <input type="text" id="recherche" placeholder="Recherche rapide…" />
+    <small id="noteCount">0 élément</small>
+  </div>
 
   <main id="mainContent">
     <!-- Zone de saisie pour une nouvelle note -->
@@ -527,10 +538,6 @@
     </div>
 
     <div class="notes-section">
-      <div class="search-container">
-        <input type="text" id="recherche" placeholder="Recherche rapide…" />
-        <div id="noteCount">0 élément</div>
-      </div>
 
       <!-- Zone d’affichage des notes (multiligne) -->
       <div id="liste-notes">
