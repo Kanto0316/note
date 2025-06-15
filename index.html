@@ -25,6 +25,27 @@
       position: static;
     }
 
+    .modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1001;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 100vw;
+      background: rgba(0,0,0,0.4);
+      z-index: 1000;
+    }
+
     textarea {
       padding-left: 3.2em; /* augmente l'espacement pour laisser de la place à l'emoji */
       box-sizing: border-box;
@@ -214,16 +235,10 @@
 
     /* Modal de confirmation */
     #modalOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.4);
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 10;
+      z-index: 1000;
     }
     #modalContent {
       background-color: #fff;
@@ -233,6 +248,7 @@
       max-width: 90%;
       width: 300px;
       text-align: center;
+      z-index: 1001;
     }
     #modalContent h2 {
       margin-top: 0;
@@ -262,16 +278,10 @@
 
     /* Modal de saisie du nom d’utilisateur */
     #modalNameOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.4);
-      display: none; /* masqué par défaut */ 
+      display: none; /* masqué par défaut */
       justify-content: center;
       align-items: center;
-      z-index: 20;
+      z-index: 1000;
     }
     #modalNameContent {
       background-color: #fff;
@@ -281,6 +291,7 @@
       max-width: 90%;
       width: 300px;
       text-align: center;
+      z-index: 1001;
     }
     #modalNameContent h2 {
       margin-top: 0;
@@ -318,16 +329,10 @@
 
     /* Modal de modification du nom */
     #modalEditOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.4);
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 20;
+      z-index: 1000;
     }
     #modalEditContent {
       background-color: #fff;
@@ -337,6 +342,7 @@
       max-width: 90%;
       width: 300px;
       text-align: center;
+      z-index: 1001;
     }
     #modalEditContent h2 {
       margin-top: 0;
@@ -374,16 +380,10 @@
 
     /* Modal d'édition de note */
     #modalNoteOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.4);
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 20;
+      z-index: 1000;
     }
     #modalNoteContent {
       background-color: #fff;
@@ -394,6 +394,7 @@
       width: 400px;
       text-align: center;
       position: relative;
+      z-index: 1001;
     }
     .textarea-wrapper {
       position: relative;
@@ -432,16 +433,10 @@
 
     /* Modal d'alerte */
     #alertModalOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0,0,0,0.5);
       display: none;
       justify-content: center;
       align-items: center;
-      z-index: 40;
+      z-index: 1000;
     }
     #alertModalContent {
       background-color: #fff;
@@ -451,6 +446,7 @@
       max-width: 90%;
       width: 300px;
       text-align: center;
+      z-index: 1001;
     }
     #alertModalContent h2 {
       margin-top: 0;
@@ -544,8 +540,8 @@
   </main>
 
   <!-- Modal de confirmation de suppression -->
-  <div id="modalOverlay">
-    <div id="modalContent">
+  <div id="modalOverlay" class="modal-backdrop">
+    <div id="modalContent" class="modal">
       <h2>Voulez-vous supprimer cet élément ?</h2>
       <div class="modal-buttons">
         <button class="modal-btn yes" id="confirmDelete">Oui</button>
@@ -555,8 +551,8 @@
   </div>
 
   <!-- Modal de saisie du nom d’utilisateur -->
-  <div id="modalNameOverlay">
-    <div id="modalNameContent">
+  <div id="modalNameOverlay" class="modal-backdrop">
+    <div id="modalNameContent" class="modal">
       <h2>Entrer votre nom</h2>
       <input type="text" id="inputUserName" placeholder="Votre nom…" maxlength="20" />
       <div class="modal-buttons">
@@ -567,8 +563,8 @@
   </div>
 
   <!-- Modal de modification du nom -->
-  <div id="modalEditOverlay">
-    <div id="modalEditContent">
+  <div id="modalEditOverlay" class="modal-backdrop">
+    <div id="modalEditContent" class="modal">
       <h2>Modifier votre nom ?</h2>
       <input type="text" id="inputEditUserName" maxlength="20" />
       <div class="modal-buttons">
@@ -579,8 +575,8 @@
   </div>
 
   <!-- Modal d'édition de note -->
-  <div id="modalNoteOverlay">
-    <div id="modalNoteContent">
+  <div id="modalNoteOverlay" class="modal-backdrop">
+    <div id="modalNoteContent" class="modal">
       <div class="textarea-wrapper">
         <textarea id="noteTextarea" rows="5" maxlength="600"></textarea>
       </div>
@@ -592,8 +588,8 @@
   </div>
 
   <!-- Modal d'alerte -->
-  <div id="alertModalOverlay">
-    <div id="alertModalContent">
+  <div id="alertModalOverlay" class="modal-backdrop">
+    <div id="alertModalContent" class="modal">
       <h2>Attention</h2>
       <p>Vous ne pouvez pas ajouter une note vide.</p>
       <button id="alertOk">OK</button>
@@ -786,6 +782,7 @@
       alertModalOverlay.querySelector("p").textContent = msg;
       alertModalOverlay.style.display = "flex";
       body.classList.add("modal-open");
+      document.body.style.overflow = 'hidden';
       clearTimeout(alertTimer);
       alertTimer = setTimeout(hideAlert, 3000);
     }
@@ -793,6 +790,7 @@
     function hideAlert() {
       alertModalOverlay.style.display = "none";
       body.classList.remove("modal-open");
+      document.body.style.overflow = '';
       clearTimeout(alertTimer);
     }
 
@@ -850,6 +848,7 @@
             idNoteToDelete = note.id;
             modalOverlay.style.display = "flex";
             body.classList.add("modal-open");
+            document.body.style.overflow = 'hidden';
           };
           divNote.appendChild(btnSupprimer);
         }
@@ -918,20 +917,12 @@
       currentNoteId = note.id;
       noteTextarea.value = note.contenu;
 
-      const currentScrollY = window.scrollY;
       modalNoteOverlay.style.display = "flex";
       body.classList.add("modal-open");
-
-      requestAnimationFrame(() => {
-        if (noteTextarea.focus) {
-          try {
-            noteTextarea.focus({ preventScroll: true });
-          } catch (e) {
-            noteTextarea.focus();
-          }
-        }
-        window.scrollTo({ top: currentScrollY });
-      });
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => {
+        noteTextarea.focus({ preventScroll: true });
+      }, 100);
     }
 
     // Écoute Firestore, tri par date de création croissante
@@ -1020,17 +1011,20 @@
       }
       modalOverlay.style.display = "none";
       body.classList.remove("modal-open");
+      document.body.style.overflow = '';
     };
     cancelDeleteBtn.onclick = () => {
       idNoteToDelete = null;
       modalOverlay.style.display = "none";
       body.classList.remove("modal-open");
+      document.body.style.overflow = '';
     };
     modalOverlay.onclick = (e) => {
       if (e.target === modalOverlay) {
         idNoteToDelete = null;
         modalOverlay.style.display = "none";
         body.classList.remove("modal-open");
+        document.body.style.overflow = '';
       }
     };
 
@@ -1046,17 +1040,20 @@
       currentNoteId = null;
       modalNoteOverlay.style.display = "none";
       body.classList.remove("modal-open");
+      document.body.style.overflow = '';
     };
     cancelNoteBtn.onclick = () => {
       currentNoteId = null;
       modalNoteOverlay.style.display = "none";
       body.classList.remove("modal-open");
+      document.body.style.overflow = '';
     };
     modalNoteOverlay.onclick = (e) => {
       if (e.target === modalNoteOverlay) {
         currentNoteId = null;
         modalNoteOverlay.style.display = "none";
         body.classList.remove("modal-open");
+        document.body.style.overflow = '';
       }
     };
 
@@ -1110,7 +1107,11 @@
       // Sinon, on affiche le modal
       modalNameOverlay.style.display = "flex";
       body.classList.add("modal-open");
+      document.body.style.overflow = 'hidden';
       inputUserName.value = "";
+      setTimeout(() => {
+        inputUserName.focus({ preventScroll: true });
+      }, 100);
 
       return new Promise((resolve) => {
         okNameBtn.onclick = async () => {
@@ -1135,6 +1136,7 @@
           headerTitle.childNodes[0].textContent = userName;
           modalNameOverlay.style.display = "none";
           body.classList.remove("modal-open");
+          document.body.style.overflow = '';
           mainContent.classList.add("active");
           resolve();
         };
@@ -1149,6 +1151,7 @@
           headerTitle.childNodes[0].textContent = userName;
           modalNameOverlay.style.display = "none";
           body.classList.remove("modal-open");
+          document.body.style.overflow = '';
           mainContent.classList.add("active");
           resolve();
         };
@@ -1160,6 +1163,10 @@
       inputEditUserName.value = userName;
       modalEditOverlay.style.display = "flex";
       body.classList.add("modal-open");
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => {
+        inputEditUserName.focus({ preventScroll: true });
+      }, 100);
     });
 
     // Gérer la modification du nom
@@ -1201,16 +1208,19 @@
 
       modalEditOverlay.style.display = "none";
       body.classList.remove("modal-open");
+      document.body.style.overflow = '';
     };
 
     cancelEditNameBtn.onclick = () => {
       modalEditOverlay.style.display = "none";
       body.classList.remove("modal-open");
+      document.body.style.overflow = '';
     };
     modalEditOverlay.onclick = (e) => {
       if (e.target === modalEditOverlay) {
         modalEditOverlay.style.display = "none";
         body.classList.remove("modal-open");
+        document.body.style.overflow = '';
       }
     };
 
