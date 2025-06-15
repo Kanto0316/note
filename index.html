@@ -69,13 +69,15 @@
       justify-content: center;
     }
 
-    .header-content {
+    .header-left {
       display: flex;
       align-items: center;
+      justify-content: flex-start;
+      margin-left: 32px;
       gap: 12px;
     }
 
-    .avatar-circle {
+    .header-avatar {
       width: 45px;
       height: 45px;
       background-color: #ff6b3c;
@@ -90,14 +92,14 @@
       flex-shrink: 0;
     }
 
-    .header-text {
+    .header-texts {
       display: flex;
       flex-direction: column;
       justify-content: center;
     }
 
     /* Titre Admin centré */
-    .page-title {
+    .header-texts .name {
       margin: 0;
       color: white; /* Texte blanc pour contraste */
       cursor: pointer; /* cliquable pour modifier le nom */
@@ -106,7 +108,7 @@
     }
 
     /* Texte "xx éléments" centré en italique */
-    .note-count {
+    .header-texts .count {
       margin: 0;
       font-size: 13px;
       color: #ccc;
@@ -216,7 +218,7 @@
         border: 1px solid #ccc;
         border-radius: 6px;
       }
-      .note-count {
+      .header-texts .count {
         font-style: italic;
         font-size: 0.9em;
         color: #ccc;
@@ -570,11 +572,11 @@
 <body>
 
   <div class="header-wrapper">
-    <div class="header-content">
-      <div class="avatar-circle">Ad</div>
-      <div class="header-text">
-        <h1 id="headerTitle" class="page-title">Admin</h1>
-        <div id="noteCount" class="note-count">0 élément</div>
+    <div class="header-left">
+      <div class="header-avatar">Ad</div>
+      <div class="header-texts">
+        <div id="headerTitle" class="name">Admin</div>
+        <div id="noteCount" class="count">0 élément</div>
       </div>
     </div>
     <input type="text" id="recherche" class="search-bar" placeholder="Recherche rapide..." />
@@ -717,7 +719,7 @@
     const headerTitle      = document.getElementById("headerTitle");
     const userCountHeader  = document.getElementById("userCountHeader");
     const noteCountDiv     = document.getElementById("noteCount");
-    const avatarCircle     = document.querySelector(".avatar-circle");
+    const avatarCircle     = document.querySelector(".header-avatar");
 
     function updateAvatar() {
       if (headerTitle && avatarCircle) {
