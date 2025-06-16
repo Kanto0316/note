@@ -158,33 +158,42 @@
       box-sizing: border-box;
       z-index: 999;
     }
-    #noteInput {
+    #inputContainer .input-wrapper {
+      position: relative;
       flex: 1;
+      display: flex;
+      align-items: center;
+    }
+    #noteInput {
+      width: 100%;
       height: 40px;              /* hauteur réduite */
       padding: 8px 2.5em 8px 2.8em; /* espace pour l'emoji et le trombone */
+      padding-right: 3.5em;      /* plus grand espace pour le trombone */
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 6px;
       resize: none;
       box-sizing: border-box;
     }
-    #emojiButton {
-      position: absolute;
-      left: 15px;
-      background: none;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-      z-index: 10;
-    }
+    #emojiButton,
     #clipButton {
       position: absolute;
-      right: 75px;
       background: none;
       border: none;
       font-size: 18px;
       cursor: pointer;
+      padding: 0;
       z-index: 10;
+    }
+    #emojiButton {
+      left: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+    #clipButton {
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
     }
     .emoji-picker {
       position: absolute;
@@ -614,9 +623,11 @@
   <main id="mainContent">
     <!-- Zone de saisie pour une nouvelle note -->
     <div id="inputContainer">
-      <button id="emojiButton">🥰</button>
-      <textarea id="noteInput" rows="2" placeholder="Écrivez ici…" maxlength="600"></textarea>
-      <button id="clipButton">📎</button>
+      <div class="input-wrapper">
+        <button id="emojiButton">🥰</button>
+        <textarea id="noteInput" rows="2" placeholder="Écrivez ici…" maxlength="600"></textarea>
+        <button id="clipButton">📎</button>
+      </div>
       <button id="addButton">Ajouter</button>
       <div id="emojiPicker" class="emoji-picker">
           <button data-emoji="😃">😃</button>
