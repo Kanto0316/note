@@ -205,13 +205,7 @@
       height: 18px;
     }
     #previewContainer {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-      margin: 0 auto 4px;
-      background-color: #f5f5f5;
-      padding: 8px;
-      justify-content: center;
+      display: none;
     }
     #previewContainer img {
       max-width: 120px;
@@ -219,6 +213,26 @@
       border-radius: 8px;
       display: block;
       object-fit: cover;
+    }
+    #floatingPreview {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      border: 1px solid #ccc;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+      padding: 8px;
+      z-index: 9999;
+      display: none;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    #floatingPreview img {
+      max-width: 120px;
+      margin: 6px;
+      border-radius: 8px;
+      display: inline-block;
     }
     .emoji-picker {
       position: absolute;
@@ -324,11 +338,10 @@
       font-style: italic;
     }
     .note-images {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-      margin-top: 6px;
+      display: flex;
+      flex-wrap: wrap;
       justify-content: center;
+      margin-top: 6px;
     }
     .note-images img {
       max-width: 120px;
@@ -814,6 +827,7 @@
     const clipButton       = document.getElementById("clipButton");
     const imageInput       = document.getElementById("imageInput");
     const previewContainer = document.getElementById("previewContainer");
+    const floatingPreview = document.getElementById("floatingPreview");
 
     function updateAvatar() {
       if (headerTitle && avatarCircle) {
@@ -828,12 +842,13 @@
     });
 
     imageInput.addEventListener('change', async () => {
+      floatingPreview.style.display = "flex";
       const files = Array.from(imageInput.files || []);
       for (const file of files) {
         const preview = document.createElement('img');
         const tmpUrl = URL.createObjectURL(file);
         preview.src = tmpUrl;
-        previewContainer.appendChild(preview);
+        floatingPreview.appendChild(preview);
 
         const formData = new FormData();
         formData.append('file', file);
@@ -1235,7 +1250,8 @@
       ajouterNoteDansFirestore(texte, uploadedImageUrls);
       textarea.value = "";
       textarea.focus();
-      previewContainer.innerHTML = "";
+      floatingPreview.innerHTML = "";
+      floatingPreview.style.display = "none";
       uploadedImageUrls = [];
       scrollToBottom();
     });
@@ -1490,6 +1506,7 @@
     await demanderNomUtilisateur();
   });
   </script>
+  <div id="floatingPreview"></div>
   <div id="toast"></div>
 </body>
 </html>
