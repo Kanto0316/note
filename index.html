@@ -180,12 +180,12 @@
       position: absolute;
       background: none;
       border: none;
-      font-size: 18px;
       cursor: pointer;
       padding: 0;
       z-index: 10;
     }
     #emojiButton {
+      font-size: 18px;
       left: 8px;
       top: 50%;
       transform: translateY(-50%);
@@ -194,6 +194,15 @@
       right: 10px;
       top: 50%;
       transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #clipButton img {
+      width: 100%;
+      height: 100%;
     }
     .emoji-picker {
       position: absolute;
@@ -626,7 +635,7 @@
       <div class="input-wrapper">
         <button id="emojiButton">🥰</button>
         <textarea id="noteInput" rows="2" placeholder="Écrivez ici…" maxlength="600"></textarea>
-        <button id="clipButton">📎</button>
+        <button id="clipButton" class="paperclip"><img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Pièce jointe"></button>
       </div>
       <button id="addButton">Ajouter</button>
       <div id="emojiPicker" class="emoji-picker">
