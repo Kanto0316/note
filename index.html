@@ -1153,9 +1153,12 @@
             copyToClipboard(note.texte);
           }, 600);
         });
-        divNote.addEventListener("pointerup", () => {
+        divNote.addEventListener("pointerup", (event) => {
           clearTimeout(longPressTimer);
           if (!longPress) {
+            if (event.target.tagName.toLowerCase() === "img") {
+              return;
+            }
             passerEnModeEdition(divNote, note);
           }
         });
