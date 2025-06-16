@@ -205,15 +205,19 @@
       height: 18px;
     }
     #previewContainer {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      margin-bottom: 4px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin: 0 auto 4px;
+      background-color: #f5f5f5;
+      padding: 8px;
+      justify-content: center;
     }
     #previewContainer img {
-      max-width: 45%;
-      margin: 4px;
+      max-width: 120px;
+      margin: 6px auto;
       border-radius: 8px;
+      display: block;
       object-fit: cover;
     }
     .emoji-picker {
@@ -320,15 +324,17 @@
       font-style: italic;
     }
     .note-images {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-      margin-top: 4px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+      justify-content: center;
     }
     .note-images img {
-      max-width: 45%;
-      margin: 4px;
+      max-width: 120px;
+      margin: 6px auto;
       border-radius: 8px;
+      display: block;
       object-fit: cover;
     }
     .note-meta-time {
