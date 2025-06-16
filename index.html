@@ -204,18 +204,17 @@
       width: 18px;
       height: 18px;
     }
-    #imagePreview {
+    #previewContainer {
       display: flex;
-      gap: 5px;
-      margin-top: 4px;
-      overflow-x: auto;
-      max-height: 50px;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 4px;
     }
-    #imagePreview img {
-      width: 40px;
-      height: 40px;
+    #previewContainer img {
+      max-width: 45%;
+      margin: 4px;
+      border-radius: 8px;
       object-fit: cover;
-      border-radius: 4px;
     }
     .emoji-picker {
       position: absolute;
@@ -327,8 +326,10 @@
       margin-top: 4px;
     }
     .note-images img {
-      max-width: 100%;
+      max-width: 45%;
+      margin: 4px;
       border-radius: 8px;
+      object-fit: cover;
     }
     .note-meta-time {
       font-size: 0.85em;
@@ -655,13 +656,13 @@
   <main id="mainContent">
     <!-- Zone de saisie pour une nouvelle note -->
     <div id="inputContainer">
+      <div id="previewContainer" class="preview-container"></div>
       <div class="input-wrapper">
         <button id="emojiButton">🥰</button>
         <textarea id="noteInput" rows="2" placeholder="Écrivez ici…" maxlength="600"></textarea>
         <button id="clipButton" class="paperclip"><img src="https://github.com/Kanto0316/note/raw/main/image-gallery.png" width="18" height="18" alt="Pièce jointe"></button>
         <input type="file" id="imageInput" multiple style="display:none">
       </div>
-      <div id="imagePreview" class="image-preview"></div>
       <button id="addButton">Ajouter</button>
       <div id="emojiPicker" class="emoji-picker">
           <button data-emoji="😃">😃</button>
@@ -806,7 +807,7 @@
     const avatarCircle     = document.querySelector(".header-avatar");
     const clipButton       = document.getElementById("clipButton");
     const imageInput       = document.getElementById("imageInput");
-    const imagePreview     = document.getElementById("imagePreview");
+    const previewContainer = document.getElementById("previewContainer");
 
     function updateAvatar() {
       if (headerTitle && avatarCircle) {
@@ -823,6 +824,11 @@
     imageInput.addEventListener('change', async () => {
       const files = Array.from(imageInput.files || []);
       for (const file of files) {
+        const preview = document.createElement('img');
+        const tmpUrl = URL.createObjectURL(file);
+        preview.src = tmpUrl;
+        previewContainer.appendChild(preview);
+
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', 'public_upload');
@@ -834,9 +840,8 @@
           const data = await response.json();
           if (data.secure_url) {
             uploadedImageUrls.push(data.secure_url);
-            const img = document.createElement('img');
-            img.src = data.secure_url;
-            imagePreview.appendChild(img);
+            preview.src = data.secure_url;
+            URL.revokeObjectURL(tmpUrl);
           }
         } catch (err) {
           console.error('Erreur upload image :', err);
@@ -1224,7 +1229,7 @@
       ajouterNoteDansFirestore(texte, uploadedImageUrls);
       textarea.value = "";
       textarea.focus();
-      imagePreview.innerHTML = "";
+      previewContainer.innerHTML = "";
       uploadedImageUrls = [];
       scrollToBottom();
     });
@@ -1240,6 +1245,8 @@
     // Gestion du modal de suppression
     confirmDeleteBtn.onclick = () => {
       if (idNoteToDelete) {
+        const elt = document.querySelector(`[data-note-id="${idNoteToDelete}"]`);
+        if (elt) elt.remove();
         supprimerNoteDansFirestore(idNoteToDelete);
         idNoteToDelete = null;
       }
