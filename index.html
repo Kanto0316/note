@@ -1124,7 +1124,7 @@
           : '';
 
         divNote.innerHTML = `
-          <div class="note-content">${note.texte}</div>
+          <div class="note-content text">${note.texte}</div>
           ${imagesHtml}
           <div class="note-meta">
             ${note.auteur || "Inconnu"} · <span class="note-meta-time" data-timestamp="${ts}">${formatRelativeTime(new Date(ts))}</span>
@@ -1192,8 +1192,14 @@
     // Passer en mode édition via modal
     function passerEnModeEdition(divNote, note) {
       if (note.auteur !== userName && userName !== "Admin") return;
+
+      const textContent = divNote.querySelector(".text")?.innerText.trim();
+      if (!textContent) {
+        return;
+      }
+
       currentNoteId = note.id;
-      noteTextarea.value = note.texte;
+      noteTextarea.value = textContent;
 
       modalNoteOverlay.style.display = "flex";
       body.classList.add("modal-open");
