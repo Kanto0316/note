@@ -852,6 +852,10 @@
     imageInput.addEventListener('change', async () => {
       const files = Array.from(imageInput.files || []);
       if (!files.length) return;
+      uploadInProgress = true;
+      btnAjouter.disabled = true;
+      btnAjouter.style.opacity = 0.5;
+      btnAjouter.style.cursor = 'not-allowed';
       floatingPreview.innerHTML = '<div class="spinner"></div><div id="progressText"></div>';
       const progressText = document.getElementById('progressText');
       const spinner = floatingPreview.querySelector('.spinner');
@@ -882,6 +886,10 @@
         }
       }
       progressText.textContent = `${files.length} prêtes à être envoyées ✅`;
+      btnAjouter.disabled = false;
+      btnAjouter.style.opacity = 1;
+      btnAjouter.style.cursor = '';
+      uploadInProgress = false;
       imageInput.value = '';
     });
 
@@ -962,6 +970,7 @@
     let userId        = "";
     let searchTerm    = "";
     let uploadedImageUrls = [];
+    let uploadInProgress = false;
 
     const viewObserver = new IntersectionObserver((entries) => {
       if (!navigator.onLine) return;
@@ -1256,6 +1265,9 @@
 
     // Gestion du clic sur “Ajouter”
     btnAjouter.addEventListener("click", () => {
+      if (uploadInProgress) {
+        return;
+      }
       const texte = textarea.value.trim();
       if (texte === "" && uploadedImageUrls.length === 0) {
         showAlert("Attention", "Note vide.");
