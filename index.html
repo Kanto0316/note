@@ -1546,6 +1546,10 @@
   window.addEventListener("DOMContentLoaded", async () => {
     await demanderNomUtilisateur();
   });
+
+  document.addEventListener("contextmenu", function (e) {
+    e.preventDefault();
+  });
   </script>
   <div id="floatingPreview"></div>
   <div id="toast"></div>
