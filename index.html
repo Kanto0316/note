@@ -2,14 +2,14 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Bloc-note collaboratif</title>
 
   <!-- ========== Style CSS inline ========== -->
   <style>
     /* Styles généraux */
     body {
-      font-family: Arial, sans-serif;
+      font-family: 'Segoe UI', sans-serif;
       margin: 0;
       padding: 0;
       background-color: #f7f7f7;
@@ -58,7 +58,7 @@
       top: 0;
       left: 0;
       right: 0;
-      background-color: #2c3e50; /* 🎯 Bleu marine */
+      background-color: #3498db;
       z-index: 999;
       padding: 10px 0;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -219,20 +219,28 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      border: 1px solid #ccc;
-      background: #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      padding: 8px;
       z-index: 9999;
+      width: 220px;
+      min-height: 150px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      text-align: center;
+      padding: 20px;
       display: none;
-      flex-wrap: wrap;
-      justify-content: center;
     }
-    #floatingPreview img {
-      max-width: 120px;
-      margin: 6px;
-      border-radius: 8px;
-      display: inline-block;
+    .spinner {
+      border: 6px solid #f3f3f3;
+      border-top: 6px solid #3498db;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
     .emoji-picker {
       position: absolute;
@@ -258,7 +266,7 @@
       padding: 0 16px;
       font-size: 14px;
       border-radius: 6px;
-      background-color: #28a745;
+      background-color: #3498db;
       color: white;
       border: none;
       cursor: pointer;
@@ -842,14 +850,15 @@
     });
 
     imageInput.addEventListener('change', async () => {
-      floatingPreview.style.display = "flex";
       const files = Array.from(imageInput.files || []);
+      if (!files.length) return;
+      floatingPreview.innerHTML = '<div class="spinner"></div><div id="progressText"></div>';
+      const progressText = document.getElementById('progressText');
+      floatingPreview.style.display = 'block';
+      let idx = 0;
       for (const file of files) {
-        const preview = document.createElement('img');
-        const tmpUrl = URL.createObjectURL(file);
-        preview.src = tmpUrl;
-        floatingPreview.appendChild(preview);
-
+        idx++;
+        progressText.textContent = `Insertion ${idx} / ${files.length}`;
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', 'public_upload');
@@ -861,13 +870,12 @@
           const data = await response.json();
           if (data.secure_url) {
             uploadedImageUrls.push(data.secure_url);
-            preview.src = data.secure_url;
-            URL.revokeObjectURL(tmpUrl);
           }
         } catch (err) {
           console.error('Erreur upload image :', err);
         }
       }
+      progressText.textContent = `${files.length} prêtes à être envoyées ✅`;
       imageInput.value = '';
     });
 
