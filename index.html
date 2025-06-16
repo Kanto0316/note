@@ -327,10 +327,8 @@
       margin-top: 4px;
     }
     .note-images img {
-      max-width: 100px;
-      max-height: 100px;
-      border-radius: 4px;
-      object-fit: cover;
+      max-width: 100%;
+      border-radius: 8px;
     }
     .note-meta-time {
       font-size: 0.85em;
@@ -1049,7 +1047,7 @@
 
       const filtered = notesLocales.filter(note => {
         return !(filtre &&
-            !note.contenu.toLowerCase().includes(filtre) &&
+            !note.texte.toLowerCase().includes(filtre) &&
             !(note.auteur && note.auteur.toLowerCase().includes(filtre)));
       });
 
@@ -1060,7 +1058,7 @@
         divNote.dataset.noteId = note.id;
         viewObserver.observe(divNote);
 
-        const ts = note.createdAt ? note.createdAt : (note.dateModification ? note.dateModification.toMillis() : Date.now());
+        const ts = note.dateModification ? note.dateModification.toMillis() : (note.timestamp || Date.now());
 
         const deleteBtn = (note.auteur === userName || userName === "Admin")
           ? `<button class="supprimer" data-id="${note.id}">&times;</button>`
@@ -1071,7 +1069,7 @@
           : '';
 
         divNote.innerHTML = `
-          <div class="note-content">${note.contenu}</div>
+          <div class="note-content">${note.texte}</div>
           ${imagesHtml}
           <div class="note-meta">
             ${note.auteur || "Inconnu"} · <span class="note-meta-time" data-timestamp="${ts}">${formatRelativeTime(new Date(ts))}</span>
@@ -1097,7 +1095,7 @@
           longPress = false;
           longPressTimer = setTimeout(() => {
             longPress = true;
-            copyToClipboard(note.contenu);
+            copyToClipboard(note.texte);
           }, 600);
         });
         divNote.addEventListener("pointerup", () => {
@@ -1137,7 +1135,7 @@
     function passerEnModeEdition(divNote, note) {
       if (note.auteur !== userName && userName !== "Admin") return;
       currentNoteId = note.id;
-      noteTextarea.value = note.contenu;
+      noteTextarea.value = note.texte;
 
       modalNoteOverlay.style.display = "flex";
       body.classList.add("modal-open");
@@ -1148,7 +1146,7 @@
     }
 
     // Écoute Firestore, tri par date de création croissante
-    const qNotes = query(notesCollection, orderBy("dateCreation"));
+    const qNotes = query(notesCollection, orderBy("timestamp"));
     onSnapshot(qNotes, (snapshot) => {
       notesLocales = [];
       noteCountDiv.textContent = `${snapshot.size} élément${snapshot.size > 1 ? "s" : ""}`;
@@ -1156,10 +1154,10 @@
         const data = docSnapshot.data();
         notesLocales.push({
           id: docSnapshot.id,
-          contenu: data.contenu || "",
-          dateModification: data.dateModification || data.dateCreation,
+          texte: data.texte || "",
+          dateModification: data.dateModification || null,
           auteur: data.auteur || "Inconnu",
-          createdAt: data.createdAt ?? (data.dateModification ? data.dateModification.toMillis() : Date.now()),
+          timestamp: data.timestamp ? data.timestamp.toMillis() : Date.now(),
           vuPar: data.vuPar || {},
           imageUrls: data.imageUrls || []
         });
@@ -1171,16 +1169,14 @@
       console.error("Erreur écoute Firestore :", err);
     });
 
-    // Ajouter note (avec auteur et dateModification initiale)
+    // Ajouter note
     async function ajouterNoteDansFirestore(texte, images = []) {
       try {
-        await addDoc(notesCollection, {
-          contenu: texte,
-          imageUrls: images,
-          dateCreation: serverTimestamp(),
-          dateModification: serverTimestamp(),
+        await addDoc(collection(db, "notes"), {
+          texte,
           auteur: userName,
-          createdAt: Date.now()
+          timestamp: serverTimestamp(),
+          imageUrls: images
         });
       } catch (err) {
         console.error("Erreur ajout note :", err);
@@ -1200,7 +1196,7 @@
     async function modifierNoteDansFirestore(idDoc, nouveauTexte) {
       try {
         await updateDoc(doc(db, "notes", idDoc), {
-          contenu: nouveauTexte,
+          texte: nouveauTexte,
           dateModification: serverTimestamp()
         });
       } catch (err) {
