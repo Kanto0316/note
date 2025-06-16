@@ -204,6 +204,19 @@
       width: 18px;
       height: 18px;
     }
+    #imagePreview {
+      display: flex;
+      gap: 5px;
+      margin-top: 4px;
+      overflow-x: auto;
+      max-height: 50px;
+    }
+    #imagePreview img {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
     .emoji-picker {
       position: absolute;
       bottom: 50px;
@@ -306,6 +319,18 @@
       font-size: 0.75rem;
       color: #666;
       font-style: italic;
+    }
+    .note-images {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .note-images img {
+      max-width: 100px;
+      max-height: 100px;
+      border-radius: 4px;
+      object-fit: cover;
     }
     .note-meta-time {
       font-size: 0.85em;
@@ -636,7 +661,9 @@
         <button id="emojiButton">🥰</button>
         <textarea id="noteInput" rows="2" placeholder="Écrivez ici…" maxlength="600"></textarea>
         <button id="clipButton" class="paperclip"><img src="https://github.com/Kanto0316/note/raw/main/image-gallery.png" width="18" height="18" alt="Pièce jointe"></button>
+        <input type="file" id="imageInput" multiple style="display:none">
       </div>
+      <div id="imagePreview" class="image-preview"></div>
       <button id="addButton">Ajouter</button>
       <div id="emojiPicker" class="emoji-picker">
           <button data-emoji="😃">😃</button>
@@ -779,6 +806,9 @@
     const headerTitle      = document.getElementById("headerTitle");
     const noteCountDiv     = document.getElementById("noteCount");
     const avatarCircle     = document.querySelector(".header-avatar");
+    const clipButton       = document.getElementById("clipButton");
+    const imageInput       = document.getElementById("imageInput");
+    const imagePreview     = document.getElementById("imagePreview");
 
     function updateAvatar() {
       if (headerTitle && avatarCircle) {
@@ -787,6 +817,35 @@
     }
 
     updateAvatar();
+
+    clipButton.addEventListener('click', () => {
+      imageInput.click();
+    });
+
+    imageInput.addEventListener('change', async () => {
+      const files = Array.from(imageInput.files || []);
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', 'public_upload');
+        try {
+          const response = await fetch('https://api.cloudinary.com/v1_1/dskw13nem/image/upload', {
+            method: 'POST',
+            body: formData
+          });
+          const data = await response.json();
+          if (data.secure_url) {
+            uploadedImageUrls.push(data.secure_url);
+            const img = document.createElement('img');
+            img.src = data.secure_url;
+            imagePreview.appendChild(img);
+          }
+        } catch (err) {
+          console.error('Erreur upload image :', err);
+        }
+      }
+      imageInput.value = '';
+    });
 
     emojiBtn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -864,6 +923,7 @@
     let userName       = "";
     let userId        = "";
     let searchTerm    = "";
+    let uploadedImageUrls = [];
 
     const viewObserver = new IntersectionObserver((entries) => {
       if (!navigator.onLine) return;
@@ -1006,8 +1066,13 @@
           ? `<button class="supprimer" data-id="${note.id}">&times;</button>`
           : "";
 
+        const imagesHtml = (note.imageUrls && note.imageUrls.length)
+          ? `<div class="note-images">${note.imageUrls.map(u => `<img src="${u}" alt="image">`).join('')}</div>`
+          : '';
+
         divNote.innerHTML = `
           <div class="note-content">${note.contenu}</div>
+          ${imagesHtml}
           <div class="note-meta">
             ${note.auteur || "Inconnu"} · <span class="note-meta-time" data-timestamp="${ts}">${formatRelativeTime(new Date(ts))}</span>
           </div>
@@ -1095,7 +1160,8 @@
           dateModification: data.dateModification || data.dateCreation,
           auteur: data.auteur || "Inconnu",
           createdAt: data.createdAt ?? (data.dateModification ? data.dateModification.toMillis() : Date.now()),
-          vuPar: data.vuPar || {}
+          vuPar: data.vuPar || {},
+          imageUrls: data.imageUrls || []
         });
       });
       renderNotes();
@@ -1106,10 +1172,11 @@
     });
 
     // Ajouter note (avec auteur et dateModification initiale)
-    async function ajouterNoteDansFirestore(texte) {
+    async function ajouterNoteDansFirestore(texte, images = []) {
       try {
         await addDoc(notesCollection, {
           contenu: texte,
+          imageUrls: images,
           dateCreation: serverTimestamp(),
           dateModification: serverTimestamp(),
           auteur: userName,
@@ -1154,13 +1221,15 @@
     // Gestion du clic sur “Ajouter”
     btnAjouter.addEventListener("click", () => {
       const texte = textarea.value.trim();
-      if (texte === "") {
+      if (texte === "" && uploadedImageUrls.length === 0) {
         showAlert("Attention", "Note vide.");
         return;
       }
-      ajouterNoteDansFirestore(texte);
+      ajouterNoteDansFirestore(texte, uploadedImageUrls);
       textarea.value = "";
       textarea.focus();
+      imagePreview.innerHTML = "";
+      uploadedImageUrls = [];
       scrollToBottom();
     });
 
