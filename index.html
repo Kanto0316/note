@@ -854,8 +854,10 @@
       if (!files.length) return;
       floatingPreview.innerHTML = '<div class="spinner"></div><div id="progressText"></div>';
       const progressText = document.getElementById('progressText');
+      const spinner = floatingPreview.querySelector('.spinner');
       floatingPreview.style.display = 'block';
       let idx = 0;
+      let completedUploads = 0;
       for (const file of files) {
         idx++;
         progressText.textContent = `Insertion ${idx} / ${files.length}`;
@@ -873,6 +875,10 @@
           }
         } catch (err) {
           console.error('Erreur upload image :', err);
+        }
+        completedUploads++;
+        if (completedUploads === files.length && spinner) {
+          spinner.style.display = 'none';
         }
       }
       progressText.textContent = `${files.length} prêtes à être envoyées ✅`;
