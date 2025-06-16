@@ -161,7 +161,7 @@
     #noteInput {
       flex: 1;
       height: 40px;              /* hauteur réduite */
-      padding: 8px 50px 8px 3.2em; /* espace pour l'emoji */
+      padding: 8px 80px 8px 3.2em; /* espace pour l'emoji et le trombone */
       font-size: 14px;
       border: 1px solid #ccc;
       border-radius: 6px;
@@ -171,6 +171,15 @@
     #emojiButton {
       position: absolute;
       left: 15px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      z-index: 10;
+    }
+    #clipButton {
+      position: absolute;
+      right: 75px;
       background: none;
       border: none;
       font-size: 18px;
@@ -607,8 +616,9 @@
     <div id="inputContainer">
       <button id="emojiButton">🥰</button>
       <textarea id="noteInput" rows="2" placeholder="Écrivez ici…" maxlength="600"></textarea>
+      <button id="clipButton">📎</button>
       <button id="addButton">Ajouter</button>
-        <div id="emojiPicker" class="emoji-picker">
+      <div id="emojiPicker" class="emoji-picker">
           <button data-emoji="😃">😃</button>
           <button data-emoji="😂">😂</button>
           <button data-emoji="😭">😭</button>
