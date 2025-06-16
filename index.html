@@ -831,6 +831,7 @@
     let idNoteToDelete = null;
     let notesLocales   = [];
     let userName       = "";
+    let userId        = "";
     let searchTerm    = "";
 
     const viewObserver = new IntersectionObserver((entries) => {
@@ -1196,21 +1197,23 @@
     // Créer un nouvel utilisateur dans Firestore
     async function creerUtilisateur(nom) {
       try {
-        await addDoc(usersCollection, {
+        const docRef = await addDoc(usersCollection, {
           name: nom,
           timestamp: serverTimestamp()
         });
+        return docRef.id;
       } catch (err) {
         console.error("Erreur création utilisateur :", err);
+        return "";
       }
     }
 
-    // Supprimer un document utilisateur selon son nom
-    async function supprimerUtilisateurParNom(nom) {
-      const qUser = query(usersCollection, where("name", "==", nom));
-      const snapshot = await getDocs(qUser);
-      for (const docSnap of snapshot.docs) {
-        await deleteDoc(doc(db, "users", docSnap.id));
+    // Supprimer un document utilisateur selon son id
+    async function supprimerUtilisateurParId(id) {
+      try {
+        await deleteDoc(doc(db, "users", id));
+      } catch (err) {
+        console.error("Erreur suppression utilisateur :", err);
       }
     }
 
@@ -1218,10 +1221,12 @@
 
     // Gérer la saisie du nom au chargement
     async function demanderNomUtilisateur() {
-      // Si un nom est déjà stocké en localStorage, on l’utilise
-      const stocke = localStorage.getItem("userName");
-      if (stocke) {
-        userName = stocke;
+      // Si un nom et un id sont déjà stockés en localStorage, on les utilise
+      const stockeNom = localStorage.getItem("userName");
+      const stockeId  = localStorage.getItem("userId");
+      if (stockeNom && stockeId) {
+        userName = stockeNom;
+        userId   = stockeId;
         document.title = userName;
         // Mettre à jour le texte principal du header sans écraser le compteur
         headerTitle.childNodes[0].textContent = userName;
@@ -1258,7 +1263,9 @@
 
           // Enregistrer et fermer modal
           localStorage.setItem("userName", userName);
-          await creerUtilisateur(userName);
+          const newId = await creerUtilisateur(userName);
+          userId = newId;
+          localStorage.setItem("userId", userId);
           document.title = userName;
           headerTitle.childNodes[0].textContent = userName;
           updateAvatar();
@@ -1274,7 +1281,9 @@
           const alea = randomLetters(4);
           userName = "utilisateur" + alea;
           localStorage.setItem("userName", userName);
-          await creerUtilisateur(userName);
+          const idGen = await creerUtilisateur(userName);
+          userId = idGen;
+          localStorage.setItem("userId", userId);
           document.title = userName;
           headerTitle.childNodes[0].textContent = userName;
           updateAvatar();
@@ -1316,9 +1325,12 @@
       }
       // On met à jour localStorage et Firestore
       const ancienNom = userName;
+      const ancienId  = userId;
       userName = nouveauNom;
       localStorage.setItem("userName", userName);
-      await creerUtilisateur(userName);
+      const nouveauId = await creerUtilisateur(userName);
+      userId = nouveauId;
+      localStorage.setItem("userId", userId);
       document.title = userName;
       headerTitle.childNodes[0].textContent = userName;
       updateAvatar();
@@ -1330,8 +1342,8 @@
         await updateDoc(doc(db, "notes", docSnapshot.id), { auteur: userName });
       }
 
-      // Supprimer l’ancien nom dans la collection 'users'
-      await supprimerUtilisateurParNom(ancienNom);
+      // Supprimer l’ancien document utilisateur dans la collection 'users'
+      await supprimerUtilisateurParId(ancienId);
 
 
       modalEditOverlay.style.display = "none";
