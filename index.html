@@ -705,6 +705,7 @@
       getFirestore,
       collection,
       addDoc,
+      setDoc,
       deleteDoc,
       updateDoc,
       doc,
@@ -851,6 +852,14 @@
         result += chars.charAt(Math.floor(Math.random() * chars.length));
       }
       return result;
+    }
+
+    // Générer l'identifiant Firestore à partir du nom
+    function genererIdUtilisateur(nom) {
+      return nom.trim()
+                .toLowerCase()
+                .replace(/\s+/g, "_")
+                .replace(/[^a-z0-9_]/g, "");
     }
 
     // Formater un Timestamp Firestore en chaîne locale
@@ -1187,21 +1196,24 @@
       }
     };
 
-    // Vérifier si un nom existe déjà
+    // Vérifier si un nom existe déjà en testant l'id généré
     async function nomExiste(nom) {
-      const qUser = query(usersCollection, where("name", "==", nom));
-      const querySnapshot = await getDocs(qUser);
-      return !querySnapshot.empty;
+      const id = genererIdUtilisateur(nom);
+      const docRef = doc(db, "users", id);
+      const docSnap = await getDoc(docRef);
+      return docSnap.exists();
     }
 
-    // Créer un nouvel utilisateur dans Firestore
+    // Créer ou mettre à jour un utilisateur avec un id basé sur son nom
     async function creerUtilisateur(nom) {
+      const id = genererIdUtilisateur(nom);
       try {
-        const docRef = await addDoc(usersCollection, {
+        const userRef = doc(db, "users", id);
+        await setDoc(userRef, {
           name: nom,
           timestamp: serverTimestamp()
         });
-        return docRef.id;
+        return id;
       } catch (err) {
         console.error("Erreur création utilisateur :", err);
         return "";
