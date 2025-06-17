@@ -69,7 +69,8 @@
       display: flex;
       flex-direction: row; /* pour aligner en ligne */
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start; /* au lieu de space-between */
+      gap: 16px; /* ajoute un petit écart seulement */
       flex-wrap: wrap;
     }
 
@@ -168,7 +169,7 @@
       border: 1px solid #ccc;
       border-radius: 6px;
       flex: 1;
-      margin-left: 20px;
+      margin-left: 0; /* enlève l’espace inutile */
       max-width: 400px;
     }
 
@@ -332,7 +333,7 @@
         border: 1px solid #ccc;
         border-radius: 6px;
         flex: 1;
-        margin-left: 20px;
+        margin-left: 0; /* enlève l’espace inutile */
         max-width: 400px;
       }
       .header-texts .count {
