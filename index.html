@@ -686,11 +686,13 @@
     overflow: auto;
   }
 
-  .image-modal-content img {
+.image-modal-content img {
     max-width: 100%;
     max-height: 60vh;
     border-radius: 8px;
     object-fit: contain;
+    transition: transform 0.3s ease;
+    cursor: grab;
   }
 
   .image-modal-buttons {
@@ -1603,10 +1605,26 @@
     const downloadBtn = document.getElementById("downloadBtn");
     const viewBtn = document.getElementById("viewBtn");
 
+    let scale = 1;
+    imageModalSrc.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      const zoomSpeed = 0.1;
+      if (e.deltaY < 0) {
+        scale += zoomSpeed;
+      } else {
+        scale = Math.max(1, scale - zoomSpeed);
+      }
+      imageModalSrc.style.transform = `scale(${scale})`;
+    });
+
     document.addEventListener("click", function (e) {
       if (e.target.tagName === "IMG" && e.target.classList.contains("message-image")) {
         const src = e.target.src;
+
         imageModalSrc.src = src;
+        imageModalSrc.style.transform = "scale(1)";
+        scale = 1;
+
         downloadBtn.href = src;
         viewBtn.href = src;
         imageModal.style.display = "flex";
