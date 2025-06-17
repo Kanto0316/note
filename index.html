@@ -1610,6 +1610,7 @@
     let scale = 1;
     let initialDistance = null;
     let lastScale = 1;
+    let lastTap = 0;
     imageModalSrc.addEventListener("wheel", function (e) {
       e.preventDefault();
       const zoomSpeed = 0.1;
@@ -1619,6 +1620,13 @@
         scale = Math.max(1, scale - zoomSpeed);
       }
       imageModalSrc.style.transform = `scale(${scale})`;
+    });
+
+    imageModalSrc.addEventListener("dblclick", function () {
+      imageModalSrc.style.transform = "scale(1)";
+      imageModalSrc.style.transformOrigin = "center center";
+      lastScale = 1;
+      scale = 1;
     });
 
     imageModalSrc.addEventListener("touchstart", function (e) {
@@ -1652,8 +1660,18 @@
 
     imageModalSrc.addEventListener("touchend", function (e) {
       if (e.touches.length < 2) {
-        lastScale = parseFloat(imageModalSrc.style.transform.replace("scale(", "").replace(")", "")) || 1;
-        scale = lastScale;
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+          imageModalSrc.style.transform = "scale(1)";
+          imageModalSrc.style.transformOrigin = "center center";
+          lastScale = 1;
+          scale = 1;
+        } else {
+          lastScale = parseFloat(imageModalSrc.style.transform.replace("scale(", "").replace(")", "")) || 1;
+          scale = lastScale;
+        }
+        lastTap = currentTime;
         initialDistance = null;
       }
     });
