@@ -7,6 +7,9 @@
 
   <!-- ========== Style CSS inline ========== -->
   <style>
+    :root {
+      --header-bg-color: #3498db;
+    }
     /* Styles généraux */
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -58,7 +61,7 @@
       top: 0;
       left: 0;
       right: 0;
-      background-color: #3498db;
+      background-color: var(--header-bg-color);
       z-index: 999;
       padding: 10px 0;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
@@ -369,20 +372,10 @@
       border-radius: 6px;
       padding: 10px 14px;
       margin-bottom: 10px;
-      color: #f0f0f0;
+      color: #fff;
+      background-color: var(--header-bg-color);
+      transition: background-color 0.3s ease;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    }
-    .note-item:nth-child(4n+1) {
-      background-color: #1c2331;
-    }
-    .note-item:nth-child(4n+2) {
-      background-color: #2c1e2e;
-    }
-    .note-item:nth-child(4n+3) {
-      background-color: #203d2d;
-    }
-    .note-item:nth-child(4n) {
-      background-color: #3a2721;
     }
     .note-item:last-child {
       margin-bottom: 0;
