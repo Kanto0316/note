@@ -1227,7 +1227,6 @@
         });
       });
       renderNotes();
-      scrollToBottom();
       loader.style.display = "none";
     }, (err) => {
       console.error("Erreur écoute Firestore :", err);
@@ -1294,7 +1293,6 @@
       floatingPreview.innerHTML = "";
       floatingPreview.style.display = "none";
       uploadedImageUrls = [];
-      scrollToBottom();
     });
 
     searchInput.addEventListener("input", () => {
