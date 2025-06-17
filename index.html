@@ -432,10 +432,18 @@
       margin-top: 6px;
     }
     .note-images img {
-      max-width: 120px;
+      height: auto;
+      width: auto;
+      max-width: 100%;
       margin: 6px auto;
       border-radius: 8px;
       display: block;
+      object-fit: contain;
+    }
+    .note-images.multiple img {
+      height: 200px;
+      width: 300px;
+      max-width: 300px;
       object-fit: cover;
     }
     .note-meta-time {
@@ -1420,6 +1428,21 @@
       });
     }
 
+    function updateImageContainer(container) {
+      const count = container.querySelectorAll('img').length;
+      if (count > 2) {
+        container.classList.add('multiple');
+      } else {
+        container.classList.remove('multiple');
+      }
+    }
+
+    function observeImages(container) {
+      const observer = new MutationObserver(() => updateImageContainer(container));
+      observer.observe(container, { childList: true });
+      updateImageContainer(container);
+    }
+
 
 
     // Afficher les notes, avec séparation verte, date et auteur,
@@ -1456,8 +1479,9 @@
           ? `<button class="supprimer" data-id="${note.id}">&times;</button>`
           : "";
 
+        const multipleClass = (note.imageUrls && note.imageUrls.length > 2) ? ' multiple' : '';
         const imagesHtml = (note.imageUrls && note.imageUrls.length)
-          ? `<div class="note-images">${note.imageUrls.map(u => `<img src="${u}" class="message-image" alt="image">`).join('')}</div>`
+          ? `<div class="note-images${multipleClass}">${note.imageUrls.map(u => `<img src="${u}" class="message-image" alt="image">`).join('')}</div>`
           : '';
 
         divNote.innerHTML = `
@@ -1468,6 +1492,11 @@
           </div>
           ${deleteBtn}
         `;
+
+        const imagesContainer = divNote.querySelector('.note-images');
+        if (imagesContainer) {
+          observeImages(imagesContainer);
+        }
 
         const btnSupprimer = divNote.querySelector('.supprimer');
         if (btnSupprimer) {
