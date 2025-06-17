@@ -1210,7 +1210,8 @@
     const confirmDownloadYes = document.getElementById("confirmDownloadYes");
     const confirmDownloadNo = document.getElementById("confirmDownloadNo");
 
-    downloadButton.addEventListener("click", () => {
+    downloadButton.addEventListener("click", (e) => {
+      e.preventDefault();
       confirmDownloadModal.style.display = "block";
     });
 
@@ -1226,7 +1227,7 @@
 
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = "Image_" + currentImageIndex + ".jpg";
+      link.download = "Image_index_" + String(currentImageIndex).padStart(3, "0") + ".jpg";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -2025,9 +2026,9 @@
   </div>
   <div id="confirmDownloadModal" class="modal">
     <div class="modal-content">
-      <p>Voulez-vous vraiment télécharger cette image ?</p>
-      <button id="confirmDownloadYes">Oui</button>
-      <button id="confirmDownloadNo">Annuler</button>
+      <p>Voulez-vous télécharger cette image ?</p>
+      <button id="confirmDownloadYes">✅ Oui, télécharger</button>
+      <button id="confirmDownloadNo">❌ Annuler</button>
     </div>
   </div>
 </body>
