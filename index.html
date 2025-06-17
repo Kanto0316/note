@@ -1225,9 +1225,13 @@
         downloadUrl = downloadUrl.replace("/upload/", "/upload/fl_attachment/");
       }
 
+      const extMatch = downloadUrl.split('?')[0].match(/\.([a-zA-Z0-9]+)$/);
+      const ext = extMatch ? extMatch[1] : 'jpg';
+      const fileName = `Image_index_${String(currentImageIndex).padStart(3, "0")}.${ext}`;
+
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = "Image_index_" + String(currentImageIndex).padStart(3, "0") + ".jpg";
+      link.download = fileName;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1839,6 +1843,8 @@
     currentImageNoteId = noteId;
     showCurrentImage();
     imageModal.style.display = "flex";
+    body.classList.add("modal-open");
+    document.body.style.overflow = 'hidden';
   }
 
   function showCurrentImage() {
@@ -1952,6 +1958,8 @@
   imageModal.addEventListener("click", function (e) {
     if (e.target.id === "imageModal") {
       imageModal.style.display = "none";
+      body.classList.remove("modal-open");
+      document.body.style.overflow = '';
     }
   });
 
@@ -1974,6 +1982,8 @@
     document.getElementById("confirmDeleteModal").style.display = "none";
     if (imageList.length === 0) {
       imageModal.style.display = "none";
+      body.classList.remove("modal-open");
+      document.body.style.overflow = '';
     } else {
       if (currentIndex >= imageList.length) currentIndex = imageList.length - 1;
       showCurrentImage();
