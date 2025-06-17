@@ -687,46 +687,115 @@
     touch-action: none;
   }
 
-#carouselContainer {
-  width: 100%;
-  max-width: 90vw;
-  max-height: 70vh;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-#carouselImage {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  transition: transform 0.3s ease;
-  border-radius: 8px;
-  touch-action: none;
-}
-
-  .image-modal-buttons {
-    margin-top: 12px;
+  #carouselContainer {
+    width: 100%;
+    max-width: 90vw;
+    max-height: 70vh;
+    overflow: hidden;
     display: flex;
-    gap: 10px;
     justify-content: center;
-    flex-wrap: wrap;
+    align-items: center;
   }
 
-  .image-modal-btn {
-    background-color: #28a745;
-    color: white;
-    padding: 8px 16px;
+  #carouselImage {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: transform 0.3s ease;
     border-radius: 8px;
-    text-decoration: none;
-    font-weight: bold;
-    transition: background 0.3s ease;
+    touch-action: none;
   }
 
-  .image-modal-btn:hover {
-    background-color: #218838;
-  }
+    .image-modal-buttons {
+      margin-top: 12px;
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .image-modal-btn {
+      background-color: #28a745;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    .image-modal-btn:hover {
+      background-color: #218838;
+    }
+
+    .carousel-container {
+      position: relative;
+      width: 100%;
+      max-width: 90vw;
+      max-height: 70vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .carousel-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 8px;
+      transition: transform 0.3s ease;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0,0,0,0.5);
+      color: white;
+      border: none;
+      font-size: 28px;
+      padding: 10px;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 10;
+      user-select: none;
+    }
+
+    #prevBtn { left: 10px; }
+    #nextBtn { right: 10px; }
+
+    .image-position-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 13px;
+      color: #888;
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 4px 10px;
+      border-radius: 6px;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .action-buttons {
+      margin-top: 15px;
+      text-align: center;
+    }
+
+    .action-buttons button {
+      margin: 0 8px;
+      padding: 8px 14px;
+      background-color: #38b000;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+    }
 
   @keyframes spin {
     to {
@@ -1607,167 +1676,136 @@
     };
 
 
-    // Au chargement de la page, demander le nom avant toute interaction
+  // Au chargement de la page, demander le nom avant toute interaction
   window.addEventListener("DOMContentLoaded", async () => {
     await demanderNomUtilisateur();
+  });
 
-    const imageModal = document.getElementById("imageModal");
-    const carouselContainer = document.getElementById("carouselContainer");
-    const carouselImage = document.getElementById("carouselImage");
-    let imageList = [];
-    let currentIndex = 0;
-    const downloadBtn = document.getElementById("downloadBtn");
-    const viewBtn = document.getElementById("viewBtn");
-    attachZoomHandlers(carouselImage);
+  const imageModal = document.getElementById("imageModal");
+  const imgEl = document.getElementById("carouselImage");
+  let imageList = [];
+  let currentIndex = 0;
+  let lastScale = 1;
+  let initialDistance = null;
 
-    function attachZoomHandlers(image) {
-      let scale = 1;
-      let initialDistance = null;
-      let lastScale = 1;
-      let lastTap = 0;
-      let isPinching = false;
+  function openImageCarousel(images, startIndex = 0) {
+    imageList = images;
+    currentIndex = startIndex;
+    showCurrentImage();
+    imageModal.style.display = "flex";
+  }
 
-      image.addEventListener("wheel", function (e) {
-        e.preventDefault();
-        const zoomSpeed = 0.1;
-        if (e.deltaY < 0) {
-          scale += zoomSpeed;
-        } else {
-          scale = Math.max(1, scale - zoomSpeed);
-        }
-        image.style.transform = `scale(${scale})`;
-      });
+  function showCurrentImage() {
+    imgEl.src = imageList[currentIndex];
+    imgEl.style.transform = "scale(1)";
+    lastScale = 1;
 
-      image.addEventListener("dblclick", function () {
-        image.style.transform = "scale(1)";
-        image.style.transformOrigin = "center center";
-        lastScale = 1;
-        scale = 1;
-      });
+    document.getElementById("downloadBtn").href = imageList[currentIndex];
+    document.getElementById("viewBtn").href = imageList[currentIndex];
+    document.getElementById("imagePosition").innerText = `${currentIndex + 1} / ${imageList.length}`;
+  }
 
-      image.addEventListener("touchstart", function (e) {
-        if (e.touches.length === 2) {
-          isPinching = true;
-          initialDistance = getTouchDistance(e.touches[0], e.touches[1]);
-
-          const center = getTouchCenter(e.touches[0], e.touches[1]);
-          const rect = image.getBoundingClientRect();
-          const offsetX = center.x - rect.left;
-          const offsetY = center.y - rect.top;
-
-          const percentX = (offsetX / rect.width) * 100;
-          const percentY = (offsetY / rect.height) * 100;
-
-          image.style.transformOrigin = `${percentX}% ${percentY}%`;
-        }
-      }, { passive: false });
-
-      image.addEventListener("touchmove", function (e) {
-        if (e.touches.length === 2 && initialDistance) {
-          isPinching = true;
-          e.preventDefault();
-
-          const newDistance = getTouchDistance(e.touches[0], e.touches[1]);
-          const scaleChange = newDistance / initialDistance;
-          const newScale = Math.min(Math.max(1, lastScale * scaleChange), 5);
-
-          image.style.transform = `scale(${newScale})`;
-          scale = newScale;
-        }
-      }, { passive: false });
-
-      image.addEventListener("touchend", function (e) {
-        if (isPinching) {
-          if (e.touches.length < 2) {
-            lastScale = parseFloat(image.style.transform.replace("scale(", "").replace(")", "")) || 1;
-            scale = lastScale;
-            if (e.touches.length === 0) {
-              isPinching = false;
-              initialDistance = null;
-            }
-          }
-          return;
-        }
-
-        if (e.touches.length > 0 || e.changedTouches.length > 1) return;
-
-        const currentTime = new Date().getTime();
-        const tapLength = currentTime - lastTap;
-        if (tapLength < 300 && tapLength > 0) {
-          image.style.transform = "scale(1)";
-          image.style.transformOrigin = "center center";
-          lastScale = 1;
-          scale = 1;
-        }
-        lastTap = currentTime;
-        initialDistance = null;
-      });
-    }
-
-    function showCurrentImage() {
-      carouselImage.src = imageList[currentIndex];
-      carouselImage.style.transform = "scale(1)";
-      downloadBtn.href = imageList[currentIndex];
-      viewBtn.href = imageList[currentIndex];
-    }
-
-    function openImageCarousel(images, startIndex = 0) {
-      imageList = images;
-      currentIndex = startIndex;
+  document.getElementById("prevBtn").onclick = () => {
+    if (currentIndex > 0) {
+      currentIndex--;
       showCurrentImage();
-      imageModal.style.display = "flex";
     }
+  };
 
-    const carousel = carouselContainer;
-    let startX = 0;
-
-    carousel.addEventListener("touchstart", (e) => {
-      if (e.touches.length === 1) {
-        startX = e.touches[0].clientX;
-      }
-    });
-
-    carousel.addEventListener("touchend", (e) => {
-      const endX = e.changedTouches[0].clientX;
-      handleSwipe(endX - startX);
-    });
-
-    carousel.addEventListener("mousedown", (e) => {
-      startX = e.clientX;
-    });
-
-    carousel.addEventListener("mouseup", (e) => {
-      const endX = e.clientX;
-      handleSwipe(endX - startX);
-    });
-
-    function handleSwipe(deltaX) {
-      const threshold = 50;
-      if (deltaX > threshold && currentIndex > 0) {
-        currentIndex--;
-        showCurrentImage();
-      } else if (deltaX < -threshold && currentIndex < imageList.length - 1) {
-        currentIndex++;
-        showCurrentImage();
-      }
+  document.getElementById("nextBtn").onclick = () => {
+    if (currentIndex < imageList.length - 1) {
+      currentIndex++;
+      showCurrentImage();
     }
+  };
 
-    document.addEventListener("click", function (e) {
-      if (e.target.tagName === "IMG" && e.target.classList.contains("message-image")) {
-        const noteEl = e.target.closest(".note-item");
-        if (!noteEl) return;
-        const note = notesLocales.find(n => n.id === noteEl.dataset.noteId);
-        if (!note || !note.imageUrls) return;
-        const index = note.imageUrls.indexOf(e.target.src);
-        openImageCarousel(note.imageUrls, index >= 0 ? index : 0);
-      }
-    });
+  let startX = 0;
+  imgEl.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 1) startX = e.touches[0].clientX;
+  });
+  imgEl.addEventListener("touchend", (e) => {
+    const deltaX = e.changedTouches[0].clientX - startX;
+    handleSwipe(deltaX);
+  });
+  imgEl.addEventListener("mousedown", (e) => startX = e.clientX);
+  imgEl.addEventListener("mouseup", (e) => handleSwipe(e.clientX - startX));
 
-    imageModal.addEventListener("click", function (e) {
-      if (e.target.id === "imageModal") {
-        imageModal.style.display = "none";
-      }
-    });
+  function handleSwipe(deltaX) {
+    if (Math.abs(deltaX) < 50) return;
+    if (deltaX > 0 && currentIndex > 0) {
+      currentIndex--;
+      showCurrentImage();
+    } else if (deltaX < 0 && currentIndex < imageList.length - 1) {
+      currentIndex++;
+      showCurrentImage();
+    }
+  }
+
+  imgEl.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    let zoomSpeed = 0.1;
+    if (e.deltaY < 0) lastScale += zoomSpeed;
+    else lastScale = Math.max(1, lastScale - zoomSpeed);
+    imgEl.style.transform = `scale(${lastScale})`;
+  });
+
+  imgEl.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) {
+      initialDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      const center = getTouchCenter(e.touches[0], e.touches[1]);
+      const rect = imgEl.getBoundingClientRect();
+      const originX = ((center.x - rect.left) / rect.width) * 100;
+      const originY = ((center.y - rect.top) / rect.height) * 100;
+      imgEl.style.transformOrigin = `${originX}% ${originY}%`;
+    }
+  }, { passive: false });
+
+  imgEl.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 2 && initialDistance) {
+      e.preventDefault();
+      const newDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      const scaleChange = newDistance / initialDistance;
+      const newScale = Math.min(Math.max(1, lastScale * scaleChange), 5);
+      imgEl.style.transform = `scale(${newScale})`;
+    }
+  }, { passive: false });
+
+  imgEl.addEventListener("touchend", () => {
+    lastScale = parseFloat(imgEl.style.transform.replace("scale(", "").replace(")", "")) || 1;
+    initialDistance = null;
+  });
+
+  let lastTap = 0;
+  imgEl.addEventListener("touchend", (e) => {
+    if (e.touches.length > 0 || e.changedTouches.length > 1) return;
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTap;
+    if (tapLength < 300 && tapLength > 0) {
+      imgEl.style.transform = "scale(1)";
+      lastScale = 1;
+    }
+    lastTap = currentTime;
+  });
+  imgEl.addEventListener("dblclick", () => {
+    imgEl.style.transform = "scale(1)";
+    lastScale = 1;
+  });
+
+  document.addEventListener("click", function (e) {
+    if (e.target.tagName === "IMG" && e.target.classList.contains("message-image")) {
+      const noteEl = e.target.closest(".note-item");
+      if (!noteEl) return;
+      const note = notesLocales.find(n => n.id === noteEl.dataset.noteId);
+      if (!note || !note.imageUrls) return;
+      const index = note.imageUrls.indexOf(e.target.src);
+      openImageCarousel(note.imageUrls, index >= 0 ? index : 0);
+    }
+  });
+
+  imageModal.addEventListener("click", function (e) {
+    if (e.target.id === "imageModal") {
+      imageModal.style.display = "none";
+    }
   });
 
   document.addEventListener("contextmenu", function (e) {
@@ -1791,12 +1829,19 @@
   <div id="toast"></div>
   <div id="imageModal" class="image-modal" style="display: none;">
     <div class="image-modal-content">
-      <div id="carouselContainer">
-      <img id="carouselImage" src="" alt="Image" />
+      <div id="carouselContainer" class="carousel-container">
+        <button id="prevBtn" class="nav-btn">&#10094;</button>
+
+        <img id="carouselImage" src="" alt="Image" />
+
+        <button id="nextBtn" class="nav-btn">&#10095;</button>
+
+        <div id="imagePosition" class="image-position-text">1 / 1</div>
       </div>
-      <div class="image-modal-buttons">
-        <a id="downloadBtn" class="image-modal-btn" download target="_blank">Télécharger</a>
-        <a id="viewBtn" class="image-modal-btn" target="_blank">Voir</a>
+
+      <div class="action-buttons">
+        <a id="downloadBtn" href="#" download><button>Télécharger</button></a>
+        <a id="viewBtn" href="#" target="_blank"><button>Voir</button></a>
       </div>
     </div>
   </div>
