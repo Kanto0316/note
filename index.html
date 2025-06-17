@@ -1435,11 +1435,24 @@
       }
     }
 
-    function observeImages(container) {
-      const observer = new MutationObserver(() => updateImageContainer(container));
-      observer.observe(container, { childList: true });
-      updateImageContainer(container);
+  function observeImages(container) {
+    const observer = new MutationObserver(() => updateImageContainer(container));
+    observer.observe(container, { childList: true });
+    updateImageContainer(container);
+  }
+
+  function updateNoteSpacing() {
+    const notes = Array.from(document.querySelectorAll('.note-item'));
+    for (let i = 1; i < notes.length; i++) {
+      const prev = notes[i - 1];
+      const curr = notes[i];
+      const prevTs = new Date(parseInt(prev.dataset.timestamp || 0));
+      const currTs = new Date(parseInt(curr.dataset.timestamp || 0));
+      const diff = Math.abs((currTs - prevTs) / 1000);
+      curr.style.marginTop = diff <= 30 ? '8px' : '18px';
     }
+    if (notes[0]) notes[0].style.marginTop = '0px';
+  }
 
 
 
@@ -1472,6 +1485,7 @@
         viewObserver.observe(divNote);
 
         const ts = note.dateModification ? note.dateModification.toMillis() : (note.timestamp || Date.now());
+        divNote.dataset.timestamp = ts;
 
         const deleteBtn = (note.auteur === userName || userName === "Admin")
           ? `<button class="supprimer" data-id="${note.id}">&times;</button>`
@@ -1551,6 +1565,7 @@
       }
 
       updateAllRelativeTimes();
+      updateNoteSpacing();
     }
 
     // Passer en mode édition via modal
@@ -1596,6 +1611,7 @@
       });
       renderNotes();
       loader.style.display = "none";
+      updateNoteSpacing();
     }, (err) => {
       console.error("Erreur écoute Firestore :", err);
     });
@@ -1687,6 +1703,7 @@
           top: document.body.scrollHeight,
           behavior: 'smooth'
         });
+        updateNoteSpacing();
       }, 100);
     });
 
@@ -1697,6 +1714,11 @@
 
     // Afficher toutes les notes dès le chargement
     window.addEventListener("load", renderNotes);
+    const noteObserver = new MutationObserver(updateNoteSpacing);
+    noteObserver.observe(document.getElementById('resultats'), {
+      childList: true,
+      subtree: true
+    });
 
     // Gestion du modal de suppression
     confirmDeleteBtn.onclick = () => {
@@ -1705,6 +1727,7 @@
         if (elt) elt.remove();
         supprimerNoteDansFirestore(idNoteToDelete);
         idNoteToDelete = null;
+        updateNoteSpacing();
       }
       modalOverlay.style.display = "none";
       body.classList.remove("modal-open");
