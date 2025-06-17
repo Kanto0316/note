@@ -1185,6 +1185,23 @@
     let uploadedImageUrls = [];
     let uploadInProgress = false;
 
+    function isNoteEmpty(data) {
+      const txt = (data.texte || "").trim();
+      const imgs = data.imageUrls || [];
+      return txt === "" && imgs.length === 0;
+    }
+
+    async function checkAndDeleteEmptyNote(id) {
+      try {
+        const snap = await getDoc(doc(db, "notes", id));
+        if (snap.exists() && isNoteEmpty(snap.data())) {
+          await supprimerNoteDansFirestore(id);
+        }
+      } catch (err) {
+        console.error("Erreur vérification note vide:", err);
+      }
+    }
+
 
     const viewObserver = new IntersectionObserver((entries) => {
       if (!navigator.onLine) return;
@@ -1421,6 +1438,10 @@
       noteCountDiv.textContent = `${snapshot.size} élément${snapshot.size > 1 ? "s" : ""}`;
       snapshot.forEach((docSnapshot) => {
         const data = docSnapshot.data();
+        if (isNoteEmpty(data)) {
+          supprimerNoteDansFirestore(docSnapshot.id);
+          return;
+        }
         notesLocales.push({
           id: docSnapshot.id,
           texte: data.texte || "",
@@ -1924,6 +1945,7 @@
     if (!currentImageNoteId || !url) return;
     await supprimerImageDansFirestore(currentImageNoteId, url);
     await supprimerImageCloudinary(url);
+    await checkAndDeleteEmptyNote(currentImageNoteId);
     imageList.splice(currentIndex, 1);
     document.getElementById("confirmDeleteModal").style.display = "none";
     if (imageList.length === 0) {
