@@ -866,26 +866,6 @@
       cursor: pointer;
     }
 
-    /* Modal de téléchargement */
-    #confirmDownloadModal {
-      display: none;
-      position: fixed;
-      z-index: 10000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.5);
-    }
-
-    #confirmDownloadModal .modal-content {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 300px;
-      text-align: center;
-      margin: 15% auto;
-    }
 
   @keyframes spin {
     to {
@@ -1205,39 +1185,6 @@
     let uploadedImageUrls = [];
     let uploadInProgress = false;
 
-    const downloadButton = document.getElementById("downloadBtn");
-    const confirmDownloadModal = document.getElementById("confirmDownloadModal");
-    const confirmDownloadYes = document.getElementById("confirmDownloadYes");
-    const confirmDownloadNo = document.getElementById("confirmDownloadNo");
-
-    downloadButton.addEventListener("click", (e) => {
-      e.preventDefault();
-      confirmDownloadModal.style.display = "block";
-    });
-
-    confirmDownloadNo.addEventListener("click", () => {
-      confirmDownloadModal.style.display = "none";
-    });
-
-    confirmDownloadYes.addEventListener("click", () => {
-      let downloadUrl = currentImageUrl;
-      if (downloadUrl.includes("/upload/")) {
-        downloadUrl = downloadUrl.replace("/upload/", "/upload/fl_attachment/");
-      }
-
-      const extMatch = downloadUrl.split('?')[0].match(/\.([a-zA-Z0-9]+)$/);
-      const ext = extMatch ? extMatch[1] : 'jpg';
-      const fileName = `Image_index_${String(currentImageIndex).padStart(3, "0")}.${ext}`;
-
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      confirmDownloadModal.style.display = "none";
-    });
 
     const viewObserver = new IntersectionObserver((entries) => {
       if (!navigator.onLine) return;
@@ -1854,7 +1801,6 @@
 
     currentImageUrl = imageList[currentIndex];
     currentImageIndex = currentIndex;
-    document.getElementById("downloadBtn").href = currentImageUrl;
     document.getElementById("imagePosition").innerText = `${currentImageIndex + 1} / ${imageList.length}`;
   }
 
@@ -2017,29 +1963,22 @@
         <div id="imagePosition" class="image-position-text">1 / 1</div>
       </div>
 
-      <div class="action-buttons-horizontal">
-        <a id="downloadBtn" href="#" download>
-          <button class="modal-btn green">Télécharger</button>
-        </a>
-        <button id="deleteImageBtn" class="modal-btn red">Supprimer</button>
+        <div class="action-buttons-horizontal">
+          <a id="downloadBtn" href="javascript:void(0);">
+            <button class="modal-btn green">Télécharger</button>
+          </a>
+          <button id="deleteImageBtn" class="modal-btn red">Supprimer</button>
+        </div>
       </div>
     </div>
-  </div>
-  <div id="confirmDeleteModal" class="modal-overlay" style="display: none;">
-    <div class="modal-confirm-box">
-      <p>❗ Voulez-vous vraiment supprimer cette image ?</p>
+    <div id="confirmDeleteModal" class="modal-overlay" style="display: none;">
+      <div class="modal-confirm-box">
+        <p>❗ Voulez-vous vraiment supprimer cette image ?</p>
       <div class="confirm-btns">
         <button id="confirmYes" class="btn-yes">Oui</button>
         <button id="confirmNo" class="btn-no">Non</button>
       </div>
+      </div>
     </div>
-  </div>
-  <div id="confirmDownloadModal" class="modal">
-    <div class="modal-content">
-      <p>Voulez-vous télécharger cette image ?</p>
-      <button id="confirmDownloadYes">✅ Oui, télécharger</button>
-      <button id="confirmDownloadNo">❌ Annuler</button>
-    </div>
-  </div>
-</body>
+  </body>
 </html>
