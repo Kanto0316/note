@@ -63,13 +63,14 @@
       right: 0;
       background-color: var(--header-bg-color);
       z-index: 999;
-      padding: 10px 0;
+      padding: 10px 20px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       will-change: transform;
       display: flex;
-      flex-direction: column;
+      flex-direction: row; /* pour aligner en ligne */
       align-items: center;
-      justify-content: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
     }
 
     .header-left {
@@ -161,13 +162,14 @@
     /* Barre de recherche centrée */
     .search-bar {
       display: block;
-      margin: 0 auto;
       width: 90%;
-      max-width: 600px;
       padding: 10px;
       font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 6px;
+      flex: 1;
+      margin-left: 20px;
+      max-width: 400px;
     }
 
     /* Compteur à droite du titre */
@@ -324,13 +326,14 @@
     /* Champ de recherche */
       .search-bar {
         display: block;
-        margin: 0 auto;
         width: 90%;
-        max-width: 600px;
         padding: 10px;
         font-size: 16px;
         border: 1px solid #ccc;
         border-radius: 6px;
+        flex: 1;
+        margin-left: 20px;
+        max-width: 400px;
       }
       .header-texts .count {
         font-style: italic;
