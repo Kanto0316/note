@@ -697,6 +697,27 @@
     cursor: grab;
   }
 
+  .image-slider {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    max-width: 90vw;
+    max-height: 60vh;
+    gap: 12px;
+  }
+
+  .image-slider img {
+    flex-shrink: 0;
+    max-height: 60vh;
+    max-width: 90vw;
+    object-fit: contain;
+    scroll-snap-align: center;
+    border-radius: 8px;
+    transition: transform 0.3s ease;
+    cursor: grab;
+    touch-action: none;
+  }
+
   .image-modal-buttons {
     margin-top: 12px;
     display: flex;
@@ -1603,102 +1624,144 @@
     await demanderNomUtilisateur();
 
     const imageModal = document.getElementById("imageModal");
-    const imageModalSrc = document.getElementById("imageModalSrc");
+    const imageSlider = document.getElementById("imageSlider");
     const downloadBtn = document.getElementById("downloadBtn");
     const viewBtn = document.getElementById("viewBtn");
 
-    let scale = 1;
-    let initialDistance = null;
-    let lastScale = 1;
-    let lastTap = 0;
-    let isPinching = false;
-    imageModalSrc.addEventListener("wheel", function (e) {
-      e.preventDefault();
-      const zoomSpeed = 0.1;
-      if (e.deltaY < 0) {
-        scale += zoomSpeed;
-      } else {
-        scale = Math.max(1, scale - zoomSpeed);
-      }
-      imageModalSrc.style.transform = `scale(${scale})`;
-    });
+    function attachZoomHandlers(image) {
+      let scale = 1;
+      let initialDistance = null;
+      let lastScale = 1;
+      let lastTap = 0;
+      let isPinching = false;
 
-    imageModalSrc.addEventListener("dblclick", function () {
-      imageModalSrc.style.transform = "scale(1)";
-      imageModalSrc.style.transformOrigin = "center center";
-      lastScale = 1;
-      scale = 1;
-    });
-
-    imageModalSrc.addEventListener("touchstart", function (e) {
-      if (e.touches.length === 2) {
-        isPinching = true;
-        initialDistance = getTouchDistance(e.touches[0], e.touches[1]);
-
-        const center = getTouchCenter(e.touches[0], e.touches[1]);
-        const rect = imageModalSrc.getBoundingClientRect();
-        const offsetX = center.x - rect.left;
-        const offsetY = center.y - rect.top;
-
-        const percentX = (offsetX / rect.width) * 100;
-        const percentY = (offsetY / rect.height) * 100;
-
-        imageModalSrc.style.transformOrigin = `${percentX}% ${percentY}%`;
-      }
-    }, { passive: false });
-
-    imageModalSrc.addEventListener("touchmove", function (e) {
-      if (e.touches.length === 2 && initialDistance) {
-        isPinching = true;
+      image.addEventListener("wheel", function (e) {
         e.preventDefault();
-
-        const newDistance = getTouchDistance(e.touches[0], e.touches[1]);
-        const scaleChange = newDistance / initialDistance;
-        const newScale = Math.min(Math.max(1, lastScale * scaleChange), 5);
-
-        imageModalSrc.style.transform = `scale(${newScale})`;
-        scale = newScale;
-      }
-    }, { passive: false });
-
-    imageModalSrc.addEventListener("touchend", function (e) {
-      if (isPinching) {
-        if (e.touches.length < 2) {
-          lastScale = parseFloat(imageModalSrc.style.transform.replace("scale(", "").replace(")", "")) || 1;
-          scale = lastScale;
-          if (e.touches.length === 0) {
-            isPinching = false;
-            initialDistance = null;
-          }
+        const zoomSpeed = 0.1;
+        if (e.deltaY < 0) {
+          scale += zoomSpeed;
+        } else {
+          scale = Math.max(1, scale - zoomSpeed);
         }
-        return;
-      }
+        image.style.transform = `scale(${scale})`;
+      });
 
-      if (e.touches.length > 0 || e.changedTouches.length > 1) return;
-
-      const currentTime = new Date().getTime();
-      const tapLength = currentTime - lastTap;
-      if (tapLength < 300 && tapLength > 0) {
-        imageModalSrc.style.transform = "scale(1)";
-        imageModalSrc.style.transformOrigin = "center center";
+      image.addEventListener("dblclick", function () {
+        image.style.transform = "scale(1)";
+        image.style.transformOrigin = "center center";
         lastScale = 1;
         scale = 1;
+      });
+
+      image.addEventListener("touchstart", function (e) {
+        if (e.touches.length === 2) {
+          isPinching = true;
+          initialDistance = getTouchDistance(e.touches[0], e.touches[1]);
+
+          const center = getTouchCenter(e.touches[0], e.touches[1]);
+          const rect = image.getBoundingClientRect();
+          const offsetX = center.x - rect.left;
+          const offsetY = center.y - rect.top;
+
+          const percentX = (offsetX / rect.width) * 100;
+          const percentY = (offsetY / rect.height) * 100;
+
+          image.style.transformOrigin = `${percentX}% ${percentY}%`;
+        }
+      }, { passive: false });
+
+      image.addEventListener("touchmove", function (e) {
+        if (e.touches.length === 2 && initialDistance) {
+          isPinching = true;
+          e.preventDefault();
+
+          const newDistance = getTouchDistance(e.touches[0], e.touches[1]);
+          const scaleChange = newDistance / initialDistance;
+          const newScale = Math.min(Math.max(1, lastScale * scaleChange), 5);
+
+          image.style.transform = `scale(${newScale})`;
+          scale = newScale;
+        }
+      }, { passive: false });
+
+      image.addEventListener("touchend", function (e) {
+        if (isPinching) {
+          if (e.touches.length < 2) {
+            lastScale = parseFloat(image.style.transform.replace("scale(", "").replace(")", "")) || 1;
+            scale = lastScale;
+            if (e.touches.length === 0) {
+              isPinching = false;
+              initialDistance = null;
+            }
+          }
+          return;
+        }
+
+        if (e.touches.length > 0 || e.changedTouches.length > 1) return;
+
+        const currentTime = new Date().getTime();
+        const tapLength = currentTime - lastTap;
+        if (tapLength < 300 && tapLength > 0) {
+          image.style.transform = "scale(1)";
+          image.style.transformOrigin = "center center";
+          lastScale = 1;
+          scale = 1;
+        }
+        lastTap = currentTime;
+        initialDistance = null;
+      });
+    }
+
+    function openImageModal(imagesArray, startIndex = 0) {
+      imageSlider.innerHTML = "";
+      imagesArray.forEach((src) => {
+        const img = document.createElement("img");
+        img.src = src;
+        img.classList.add("zoomable");
+        imageSlider.appendChild(img);
+        attachZoomHandlers(img);
+      });
+
+      imageModal.style.display = "flex";
+
+      if (imageSlider.children[startIndex]) {
+        imageSlider.children[startIndex].scrollIntoView({ inline: "center" });
+        downloadBtn.href = imagesArray[startIndex];
+        viewBtn.href = imagesArray[startIndex];
       }
-      lastTap = currentTime;
-      initialDistance = null;
+
+      updateButtons();
+    }
+
+    function updateButtons() {
+      const imgs = Array.from(imageSlider.querySelectorAll("img"));
+      if (!imgs.length) return;
+      const center = imageSlider.scrollLeft + imageSlider.clientWidth / 2;
+      let closest = imgs[0];
+      let closestDist = Math.abs(center - (closest.offsetLeft + closest.clientWidth / 2));
+      imgs.forEach((img) => {
+        const dist = Math.abs(center - (img.offsetLeft + img.clientWidth / 2));
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = img;
+        }
+      });
+      downloadBtn.href = closest.src;
+      viewBtn.href = closest.src;
+    }
+
+    imageSlider.addEventListener("scroll", () => {
+      updateButtons();
     });
 
     document.addEventListener("click", function (e) {
       if (e.target.tagName === "IMG" && e.target.classList.contains("message-image")) {
-        const src = e.target.src;
-
-        imageModalSrc.src = src;
-        imageModalSrc.style.transform = "scale(1)";
-        scale = 1;
-
-        downloadBtn.href = src;
-        viewBtn.href = src;
-        imageModal.style.display = "flex";
+        const noteEl = e.target.closest(".note-item");
+        if (!noteEl) return;
+        const note = notesLocales.find(n => n.id === noteEl.dataset.noteId);
+        if (!note || !note.imageUrls) return;
+        const index = note.imageUrls.indexOf(e.target.src);
+        openImageModal(note.imageUrls, index >= 0 ? index : 0);
       }
     });
 
@@ -1730,7 +1793,7 @@
   <div id="toast"></div>
   <div id="imageModal" class="image-modal" style="display: none;">
     <div class="image-modal-content">
-      <img id="imageModalSrc" src="" alt="Aperçu" />
+      <div class="image-slider" id="imageSlider"></div>
       <div class="image-modal-buttons">
         <a id="downloadBtn" class="image-modal-btn" download target="_blank">Télécharger</a>
         <a id="viewBtn" class="image-modal-btn" target="_blank">Voir</a>
