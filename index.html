@@ -112,6 +112,32 @@
       z-index: 1000;
     }
 
+    .menu-popup {
+      position: absolute;
+      background-color: #333;
+      color: #ddd;
+      border-radius: 6px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      padding: 5px 0;
+      display: none;
+      opacity: 0;
+      transform: scale(0.95);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .menu-popup.show {
+      display: block;
+      opacity: 1;
+      transform: scale(1);
+    }
+    .menu-item {
+      padding: 10px 15px;
+      cursor: pointer;
+      color: #fff;
+    }
+    .menu-item:hover {
+      background-color: #444;
+    }
+
     /* Titre Admin centré */
     .header-texts .name {
       margin: 0;
@@ -903,6 +929,10 @@
     </div>
     <input type="text" id="recherche" class="search-bar" placeholder="Recherche rapide..." />
     <button id="menuButton" class="menu-button">&#8942;</button>
+    <div id="menuPopup" class="menu-popup">
+      <div class="menu-item">Profil</div>
+      <div class="menu-item">À propos</div>
+    </div>
   </div>
 
   <main id="mainContent">
@@ -1062,6 +1092,8 @@
     const imageInput       = document.getElementById("imageInput");
     const previewContainer = document.getElementById("previewContainer");
     const floatingPreview = document.getElementById("floatingPreview");
+    const menuButton       = document.getElementById("menuButton");
+    const menuPopup        = document.getElementById("menuPopup");
 
     function updateAvatar() {
       if (headerTitle && avatarCircle) {
@@ -1140,6 +1172,34 @@
     document.addEventListener("click", (e) => {
       if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) {
         emojiPicker.style.display = "none";
+      }
+    });
+
+    function openMenu() {
+      const rect = menuButton.getBoundingClientRect();
+      menuPopup.style.right = (window.innerWidth - rect.right) + "px";
+      menuPopup.style.top = rect.bottom + "px";
+      menuPopup.style.display = "block";
+      requestAnimationFrame(() => menuPopup.classList.add("show"));
+    }
+
+    function closeMenu() {
+      menuPopup.classList.remove("show");
+      setTimeout(() => { menuPopup.style.display = "none"; }, 200);
+    }
+
+    menuButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (menuPopup.style.display === "block") {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (menuPopup.style.display === "block" && !menuPopup.contains(e.target) && e.target !== menuButton) {
+        closeMenu();
       }
     });
 
