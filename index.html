@@ -781,20 +781,29 @@
       user-select: none;
     }
 
-    .action-buttons {
-      margin-top: 15px;
-      text-align: center;
+    .action-buttons-vertical {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
     }
 
-    .action-buttons button {
-      margin: 0 8px;
-      padding: 8px 14px;
+    .modal-btn {
+      width: 130px;
+      height: 40px;
       background-color: #38b000;
       color: white;
       border: none;
-      border-radius: 8px;
+      border-radius: 24px;
       cursor: pointer;
       font-size: 14px;
+      font-weight: bold;
+      transition: background 0.2s ease;
+    }
+
+    .modal-btn:hover {
+      background-color: #2d8f00;
     }
 
   @keyframes spin {
@@ -1839,9 +1848,13 @@
         <div id="imagePosition" class="image-position-text">1 / 1</div>
       </div>
 
-      <div class="action-buttons">
-        <a id="downloadBtn" href="#" download><button>Télécharger</button></a>
-        <a id="viewBtn" href="#" target="_blank"><button>Voir</button></a>
+      <div class="action-buttons-vertical">
+        <a id="downloadBtn" href="#" download>
+          <button class="modal-btn">Télécharger</button>
+        </a>
+        <a id="viewBtn" href="#" target="_blank">
+          <button class="modal-btn">Voir Tout</button>
+        </a>
       </div>
     </div>
   </div>
