@@ -1611,6 +1611,7 @@
     let initialDistance = null;
     let lastScale = 1;
     let lastTap = 0;
+    let isPinching = false;
     imageModalSrc.addEventListener("wheel", function (e) {
       e.preventDefault();
       const zoomSpeed = 0.1;
@@ -1631,6 +1632,7 @@
 
     imageModalSrc.addEventListener("touchstart", function (e) {
       if (e.touches.length === 2) {
+        isPinching = true;
         initialDistance = getTouchDistance(e.touches[0], e.touches[1]);
 
         const center = getTouchCenter(e.touches[0], e.touches[1]);
@@ -1647,6 +1649,7 @@
 
     imageModalSrc.addEventListener("touchmove", function (e) {
       if (e.touches.length === 2 && initialDistance) {
+        isPinching = true;
         e.preventDefault();
 
         const newDistance = getTouchDistance(e.touches[0], e.touches[1]);
@@ -1659,21 +1662,30 @@
     }, { passive: false });
 
     imageModalSrc.addEventListener("touchend", function (e) {
-      if (e.touches.length < 2) {
-        const currentTime = new Date().getTime();
-        const tapLength = currentTime - lastTap;
-        if (tapLength < 300 && tapLength > 0) {
-          imageModalSrc.style.transform = "scale(1)";
-          imageModalSrc.style.transformOrigin = "center center";
-          lastScale = 1;
-          scale = 1;
-        } else {
+      if (isPinching) {
+        if (e.touches.length < 2) {
           lastScale = parseFloat(imageModalSrc.style.transform.replace("scale(", "").replace(")", "")) || 1;
           scale = lastScale;
+          if (e.touches.length === 0) {
+            isPinching = false;
+            initialDistance = null;
+          }
         }
-        lastTap = currentTime;
-        initialDistance = null;
+        return;
       }
+
+      if (e.touches.length > 0 || e.changedTouches.length > 1) return;
+
+      const currentTime = new Date().getTime();
+      const tapLength = currentTime - lastTap;
+      if (tapLength < 300 && tapLength > 0) {
+        imageModalSrc.style.transform = "scale(1)";
+        imageModalSrc.style.transformOrigin = "center center";
+        lastScale = 1;
+        scale = 1;
+      }
+      lastTap = currentTime;
+      initialDistance = null;
     });
 
     document.addEventListener("click", function (e) {
