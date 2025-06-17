@@ -67,10 +67,10 @@
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       will-change: transform;
       display: flex;
-      flex-direction: row; /* pour aligner en ligne */
+      flex-direction: row;
       align-items: center;
-      justify-content: flex-start; /* au lieu de space-between */
-      gap: 16px; /* ajoute un petit écart seulement */
+      justify-content: space-between;
+      gap: 10px;
       flex-wrap: wrap;
     }
 
@@ -80,6 +80,13 @@
       justify-content: flex-start;
       margin-left: 32px;
       gap: 12px;
+    }
+
+    .header-left-group {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      gap: 16px;
     }
 
     .header-avatar {
@@ -104,17 +111,14 @@
     }
 
     .menu-button {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 20px;
-      height: 20px;
+      position: relative;
+      margin-left: auto;
+      align-self: center;
+      font-size: 20px;
       background: transparent;
       border: none;
-      font-size: 20px;
-      color: white;
       cursor: pointer;
-      z-index: 1000;
+      color: white;
     }
 
     .menu-popup {
@@ -948,14 +952,16 @@
   <div id="loader"></div>
 
   <div class="header-wrapper">
-    <div class="header-left">
-      <div class="header-avatar">Ad</div>
-      <div class="header-texts">
-        <div id="headerTitle" class="name">Admin</div>
-        <div id="noteCount" class="count">0 élément</div>
+    <div class="header-left-group">
+      <div class="header-left">
+        <div class="header-avatar">Ad</div>
+        <div class="header-texts">
+          <div id="headerTitle" class="name">Admin</div>
+          <div id="noteCount" class="count">0 élément</div>
+        </div>
       </div>
+      <input type="text" id="recherche" class="search-bar" placeholder="Recherche rapide..." />
     </div>
-    <input type="text" id="recherche" class="search-bar" placeholder="Recherche rapide..." />
     <button id="menuButton" class="menu-button">&#8942;</button>
     <div id="menuPopup" class="menu-popup">
       <div class="menu-item">Profil</div>
