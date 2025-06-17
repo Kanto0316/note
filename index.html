@@ -818,6 +818,54 @@
       background-color: #b8001b;
     }
 
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .modal-confirm-box {
+      background: white;
+      padding: 20px 30px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .confirm-btns {
+      margin-top: 20px;
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    .btn-yes {
+      background-color: #e60023;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-no {
+      background-color: #ccc;
+      color: black;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
   @keyframes spin {
     to {
       transform: rotate(360deg);
@@ -1856,12 +1904,19 @@
     e.preventDefault();
   });
 
-  document.getElementById("deleteImageBtn").onclick = async () => {
+  document.getElementById("deleteImageBtn").onclick = () => {
+    document.getElementById("confirmDeleteModal").style.display = "flex";
+  };
+  document.getElementById("confirmNo").onclick = () => {
+    document.getElementById("confirmDeleteModal").style.display = "none";
+  };
+  document.getElementById("confirmYes").onclick = async () => {
     const url = imageList[currentIndex];
     if (!currentImageNoteId || !url) return;
     await supprimerImageDansFirestore(currentImageNoteId, url);
     await supprimerImageCloudinary(url);
     imageList.splice(currentIndex, 1);
+    document.getElementById("confirmDeleteModal").style.display = "none";
     if (imageList.length === 0) {
       imageModal.style.display = "none";
     } else {
@@ -1902,6 +1957,15 @@
           <button class="modal-btn green">Télécharger</button>
         </a>
         <button id="deleteImageBtn" class="modal-btn red">Supprimer</button>
+      </div>
+    </div>
+  </div>
+  <div id="confirmDeleteModal" class="modal-overlay" style="display: none;">
+    <div class="modal-confirm-box">
+      <p>❗ Voulez-vous vraiment supprimer cette image ?</p>
+      <div class="confirm-btns">
+        <button id="confirmYes" class="btn-yes">Oui</button>
+        <button id="confirmNo" class="btn-no">Non</button>
       </div>
     </div>
   </div>
