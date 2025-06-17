@@ -928,8 +928,6 @@
     // Sur mobile, remonter la zone de texte au-dessus du clavier
     textarea.addEventListener("focus", () => {
       setTimeout(() => {
-        // Désactiver le scroll automatique
-        // textarea.scrollIntoView({ behavior: "smooth", block: "nearest" });
       }, 300);
     });
 
@@ -1087,11 +1085,7 @@
       });
     }
 
-    // Faire défiler la page vers le bas pour garder le champ de saisie visible
-    function scrollToBottom() {
-      // Désactiver le scroll automatique
-      // window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-    }
+
 
     // Afficher les notes, avec séparation verte, date et auteur,
     // et n’autoriser la suppression qu’aux propres notes
@@ -1229,7 +1223,6 @@
         });
       });
       renderNotes();
-      // scrollToBottom();
       loader.style.display = "none";
     }, (err) => {
       console.error("Erreur écoute Firestore :", err);
@@ -1296,7 +1289,12 @@
       floatingPreview.innerHTML = "";
       floatingPreview.style.display = "none";
       uploadedImageUrls = [];
-      // scrollToBottom();
+      setTimeout(() => {
+        window.scrollTo({
+          top: document.body.scrollHeight,
+          behavior: 'smooth'
+        });
+      }, 100);
     });
 
     searchInput.addEventListener("input", () => {
