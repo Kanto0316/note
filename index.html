@@ -684,6 +684,7 @@
     max-height: 80vh;
     text-align: center;
     overflow: auto;
+    touch-action: none;
   }
 
 .image-modal-content img {
@@ -1606,6 +1607,8 @@
     const viewBtn = document.getElementById("viewBtn");
 
     let scale = 1;
+    let initialDistance = null;
+    let lastScale = 1;
     imageModalSrc.addEventListener("wheel", function (e) {
       e.preventDefault();
       const zoomSpeed = 0.1;
@@ -1615,6 +1618,33 @@
         scale = Math.max(1, scale - zoomSpeed);
       }
       imageModalSrc.style.transform = `scale(${scale})`;
+    });
+
+    imageModalSrc.addEventListener("touchstart", function (e) {
+      if (e.touches.length === 2) {
+        initialDistance = getTouchDistance(e.touches[0], e.touches[1]);
+      }
+    }, { passive: false });
+
+    imageModalSrc.addEventListener("touchmove", function (e) {
+      if (e.touches.length === 2 && initialDistance) {
+        e.preventDefault();
+
+        const newDistance = getTouchDistance(e.touches[0], e.touches[1]);
+        const scaleChange = newDistance / initialDistance;
+        const newScale = Math.min(Math.max(1, lastScale * scaleChange), 5);
+
+        imageModalSrc.style.transform = `scale(${newScale})`;
+        scale = newScale;
+      }
+    }, { passive: false });
+
+    imageModalSrc.addEventListener("touchend", function (e) {
+      if (e.touches.length < 2) {
+        lastScale = parseFloat(imageModalSrc.style.transform.replace("scale(", "").replace(")", "")) || 1;
+        scale = lastScale;
+        initialDistance = null;
+      }
     });
 
     document.addEventListener("click", function (e) {
@@ -1641,6 +1671,12 @@
   document.addEventListener("contextmenu", function (e) {
     e.preventDefault();
   });
+
+  function getTouchDistance(touch1, touch2) {
+    const dx = touch2.clientX - touch1.clientX;
+    const dy = touch2.clientY - touch1.clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
   </script>
   <div id="floatingPreview"></div>
   <div id="toast"></div>
