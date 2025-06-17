@@ -381,12 +381,27 @@
       max-width: 80%;
       word-wrap: break-word;
     }
+
+    .note-bubble {
+      max-width: 80%;
+      padding: 10px 16px;
+      border-radius: 20px;
+      margin: 6px 0;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      word-break: break-word;
+    }
+
     .note-self {
       align-self: flex-end;
+      background-color: #2e7d32;
+      color: white;
       text-align: right;
     }
+
     .note-other {
       align-self: flex-start;
+      background-color: #a5d6a7;
+      color: black;
       text-align: left;
     }
     .note-item:last-child {
@@ -1425,7 +1440,7 @@
 
         const divNote = document.createElement("div");
         const self = note.auteur === userName;
-        divNote.className = `note-item ${self ? 'note-self' : 'note-other'}`;
+        divNote.className = `note-item note-bubble ${self ? 'note-self' : 'note-other'}`;
         divNote.dataset.noteId = note.id;
         viewObserver.observe(divNote);
 
