@@ -358,12 +358,12 @@
     }
     */
 
-    /* Liste des notes (multiligne) */
-    #liste-notes {
-      background-color: #fff;
+    /* Fond général de la zone des résultats de notes */
+    #resultats {
+      background-color: #f2f2f2; /* gris clair */
+      padding: 16px;
       border: 1px solid #ddd;
       border-radius: 4px;
-      padding: 0.5rem;
       padding-bottom: 70px; /* espace réservé pour ne pas que le contenu passe sous le champ fixe */
       display: flex;
       flex-direction: column;
@@ -419,10 +419,11 @@
       cursor: pointer;
       z-index: 2;
     }
+    /* Style du texte auteur + date */
     .note-meta {
-      font-size: 0.75rem;
-      color: #f0f0f0;
-      font-style: italic;
+      font-size: 12px;
+      color: black !important; /* texte en noir */
+      margin-top: 8px;
     }
     .note-images {
       display: flex;
@@ -1003,7 +1004,7 @@
     <div class="notes-section">
 
       <!-- Zone d’affichage des notes (multiligne) -->
-      <div id="liste-notes">
+      <div id="resultats">
         <!-- Les notes s’afficheront ici en plusieurs lignes -->
       </div>
     </div>
@@ -1116,7 +1117,7 @@
     const btnAjouter       = document.getElementById("addButton");
     const emojiBtn         = document.getElementById("emojiButton");
     const emojiPicker      = document.getElementById("emojiPicker");
-    const listeNotesDiv    = document.getElementById("liste-notes");
+    const listeNotesDiv    = document.getElementById("resultats");
     const mainContent      = document.getElementById("mainContent");
     const headerTitle      = document.getElementById("headerTitle");
     const noteCountDiv     = document.getElementById("noteCount");
