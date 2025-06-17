@@ -804,6 +804,20 @@
       background-color: #2d8f00;
     }
 
+    .modal-btn.green {
+      background-color: #38b000;
+    }
+    .modal-btn.green:hover {
+      background-color: #2d8f00;
+    }
+
+    .modal-btn.red {
+      background-color: #e60023;
+    }
+    .modal-btn.red:hover {
+      background-color: #b8001b;
+    }
+
   @keyframes spin {
     to {
       transform: rotate(360deg);
@@ -946,7 +960,8 @@
       getDocs,
       serverTimestamp,
       getDoc,
-      arrayUnion
+      arrayUnion,
+      arrayRemove
     } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
 
     // Configuration Firebase
@@ -1109,6 +1124,7 @@
     let alertTimer;
 
     let currentNoteId = null;
+    let currentImageNoteId = null;
 
     let idNoteToDelete = null;
     let notesLocales   = [];
@@ -1404,15 +1420,36 @@
       }
     }
 
-    async function marquerCommeVu(noteId) {
-      const noteRef = doc(db, "notes", noteId);
-      const user = localStorage.getItem("userName") || userName;
-      try {
-        await updateDoc(noteRef, { [`vuPar.${user}`]: true });
-      } catch (err) {
-        console.error("Erreur mise à jour vuPar:", err);
-      }
+  async function marquerCommeVu(noteId) {
+    const noteRef = doc(db, "notes", noteId);
+    const user = localStorage.getItem("userName") || userName;
+    try {
+      await updateDoc(noteRef, { [`vuPar.${user}`]: true });
+    } catch (err) {
+      console.error("Erreur mise à jour vuPar:", err);
     }
+  }
+
+  async function supprimerImageDansFirestore(noteId, url) {
+    try {
+      const ref = doc(db, "notes", noteId);
+      await updateDoc(ref, { imageUrls: arrayRemove(url) });
+    } catch (err) {
+      console.error("Erreur suppression image Firestore:", err);
+    }
+  }
+
+  async function supprimerImageCloudinary(url) {
+    try {
+      await fetch("https://api.cloudinary.com/v1_1/dskw13nem/delete_by_token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url })
+      });
+    } catch (err) {
+      console.error("Erreur suppression Cloudinary:", err);
+    }
+  }
 
     // Gestion du clic sur “Ajouter”
     btnAjouter.addEventListener("click", () => {
@@ -1695,9 +1732,10 @@
   let lastScale = 1;
   let initialDistance = null;
 
-  function openImageCarousel(images, startIndex = 0) {
+  function openImageCarousel(images, startIndex = 0, noteId = null) {
     imageList = images;
     currentIndex = startIndex;
+    currentImageNoteId = noteId;
     showCurrentImage();
     imageModal.style.display = "flex";
   }
@@ -1708,7 +1746,6 @@
     lastScale = 1;
 
     document.getElementById("downloadBtn").href = imageList[currentIndex];
-    document.getElementById("viewBtn").href = imageList[currentIndex];
     document.getElementById("imagePosition").innerText = `${currentIndex + 1} / ${imageList.length}`;
   }
 
@@ -1805,7 +1842,7 @@
       const note = notesLocales.find(n => n.id === noteEl.dataset.noteId);
       if (!note || !note.imageUrls) return;
       const index = note.imageUrls.indexOf(e.target.src);
-      openImageCarousel(note.imageUrls, index >= 0 ? index : 0);
+      openImageCarousel(note.imageUrls, index >= 0 ? index : 0, note.id);
     }
   });
 
@@ -1818,6 +1855,20 @@
   document.addEventListener("contextmenu", function (e) {
     e.preventDefault();
   });
+
+  document.getElementById("deleteImageBtn").onclick = async () => {
+    const url = imageList[currentIndex];
+    if (!currentImageNoteId || !url) return;
+    await supprimerImageDansFirestore(currentImageNoteId, url);
+    await supprimerImageCloudinary(url);
+    imageList.splice(currentIndex, 1);
+    if (imageList.length === 0) {
+      imageModal.style.display = "none";
+    } else {
+      if (currentIndex >= imageList.length) currentIndex = imageList.length - 1;
+      showCurrentImage();
+    }
+  };
 
   function getTouchDistance(touch1, touch2) {
     const dx = touch2.clientX - touch1.clientX;
@@ -1848,11 +1899,9 @@
 
       <div class="action-buttons-horizontal">
         <a id="downloadBtn" href="#" download>
-          <button class="modal-btn">Télécharger</button>
+          <button class="modal-btn green">Télécharger</button>
         </a>
-        <a id="viewBtn" href="#" target="_blank">
-          <button class="modal-btn">Voir Tout</button>
-        </a>
+        <button id="deleteImageBtn" class="modal-btn red">Supprimer</button>
       </div>
     </div>
   </div>
