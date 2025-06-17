@@ -687,36 +687,24 @@
     touch-action: none;
   }
 
-.image-modal-content img {
-    transform-origin: center center;
-    max-width: 100%;
-    max-height: 60vh;
-    border-radius: 8px;
-    object-fit: contain;
-    transition: transform 0.3s ease;
-    cursor: grab;
-  }
+#carouselContainer {
+  width: 100%;
+  max-width: 90vw;
+  max-height: 70vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
-  .image-slider {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    max-width: 90vw;
-    max-height: 60vh;
-    gap: 12px;
-  }
-
-  .image-slider img {
-    flex-shrink: 0;
-    max-height: 60vh;
-    max-width: 90vw;
-    object-fit: contain;
-    scroll-snap-align: center;
-    border-radius: 8px;
-    transition: transform 0.3s ease;
-    cursor: grab;
-    touch-action: none;
-  }
+#carouselImage {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.3s ease;
+  border-radius: 8px;
+  touch-action: none;
+}
 
   .image-modal-buttons {
     margin-top: 12px;
@@ -1624,9 +1612,13 @@
     await demanderNomUtilisateur();
 
     const imageModal = document.getElementById("imageModal");
-    const imageSlider = document.getElementById("imageSlider");
+    const carouselContainer = document.getElementById("carouselContainer");
+    const carouselImage = document.getElementById("carouselImage");
+    let imageList = [];
+    let currentIndex = 0;
     const downloadBtn = document.getElementById("downloadBtn");
     const viewBtn = document.getElementById("viewBtn");
+    attachZoomHandlers(carouselImage);
 
     function attachZoomHandlers(image) {
       let scale = 1;
@@ -1712,47 +1704,53 @@
       });
     }
 
-    function openImageModal(imagesArray, startIndex = 0) {
-      imageSlider.innerHTML = "";
-      imagesArray.forEach((src) => {
-        const img = document.createElement("img");
-        img.src = src;
-        img.classList.add("zoomable");
-        imageSlider.appendChild(img);
-        attachZoomHandlers(img);
-      });
+    function showCurrentImage() {
+      carouselImage.src = imageList[currentIndex];
+      carouselImage.style.transform = "scale(1)";
+      downloadBtn.href = imageList[currentIndex];
+      viewBtn.href = imageList[currentIndex];
+    }
 
+    function openImageCarousel(images, startIndex = 0) {
+      imageList = images;
+      currentIndex = startIndex;
+      showCurrentImage();
       imageModal.style.display = "flex";
+    }
 
-      if (imageSlider.children[startIndex]) {
-        imageSlider.children[startIndex].scrollIntoView({ inline: "center" });
-        downloadBtn.href = imagesArray[startIndex];
-        viewBtn.href = imagesArray[startIndex];
+    const carousel = carouselContainer;
+    let startX = 0;
+
+    carousel.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 1) {
+        startX = e.touches[0].clientX;
       }
-
-      updateButtons();
-    }
-
-    function updateButtons() {
-      const imgs = Array.from(imageSlider.querySelectorAll("img"));
-      if (!imgs.length) return;
-      const center = imageSlider.scrollLeft + imageSlider.clientWidth / 2;
-      let closest = imgs[0];
-      let closestDist = Math.abs(center - (closest.offsetLeft + closest.clientWidth / 2));
-      imgs.forEach((img) => {
-        const dist = Math.abs(center - (img.offsetLeft + img.clientWidth / 2));
-        if (dist < closestDist) {
-          closestDist = dist;
-          closest = img;
-        }
-      });
-      downloadBtn.href = closest.src;
-      viewBtn.href = closest.src;
-    }
-
-    imageSlider.addEventListener("scroll", () => {
-      updateButtons();
     });
+
+    carousel.addEventListener("touchend", (e) => {
+      const endX = e.changedTouches[0].clientX;
+      handleSwipe(endX - startX);
+    });
+
+    carousel.addEventListener("mousedown", (e) => {
+      startX = e.clientX;
+    });
+
+    carousel.addEventListener("mouseup", (e) => {
+      const endX = e.clientX;
+      handleSwipe(endX - startX);
+    });
+
+    function handleSwipe(deltaX) {
+      const threshold = 50;
+      if (deltaX > threshold && currentIndex > 0) {
+        currentIndex--;
+        showCurrentImage();
+      } else if (deltaX < -threshold && currentIndex < imageList.length - 1) {
+        currentIndex++;
+        showCurrentImage();
+      }
+    }
 
     document.addEventListener("click", function (e) {
       if (e.target.tagName === "IMG" && e.target.classList.contains("message-image")) {
@@ -1761,7 +1759,7 @@
         const note = notesLocales.find(n => n.id === noteEl.dataset.noteId);
         if (!note || !note.imageUrls) return;
         const index = note.imageUrls.indexOf(e.target.src);
-        openImageModal(note.imageUrls, index >= 0 ? index : 0);
+        openImageCarousel(note.imageUrls, index >= 0 ? index : 0);
       }
     });
 
@@ -1793,7 +1791,9 @@
   <div id="toast"></div>
   <div id="imageModal" class="image-modal" style="display: none;">
     <div class="image-modal-content">
-      <div class="image-slider" id="imageSlider"></div>
+      <div id="carouselContainer">
+      <img id="carouselImage" src="" alt="Image" />
+      </div>
       <div class="image-modal-buttons">
         <a id="downloadBtn" class="image-modal-btn" download target="_blank">Télécharger</a>
         <a id="viewBtn" class="image-modal-btn" target="_blank">Voir</a>
