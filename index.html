@@ -1173,6 +1173,8 @@
 
     let currentNoteId = null;
     let currentImageNoteId = null;
+    let currentImageUrl = "";
+    let currentImageIndex = 0;
 
     let idNoteToDelete = null;
     let notesLocales   = [];
@@ -1793,8 +1795,10 @@
     imgEl.style.transform = "scale(1)";
     lastScale = 1;
 
-    document.getElementById("downloadBtn").href = imageList[currentIndex];
-    document.getElementById("imagePosition").innerText = `${currentIndex + 1} / ${imageList.length}`;
+    currentImageUrl = imageList[currentIndex];
+    currentImageIndex = currentIndex;
+    document.getElementById("downloadBtn").href = currentImageUrl;
+    document.getElementById("imagePosition").innerText = `${currentImageIndex + 1} / ${imageList.length}`;
   }
 
   document.getElementById("prevBtn").onclick = () => {
@@ -1925,6 +1929,25 @@
     }
   };
 
+  document.getElementById("downloadBtn").onclick = (e) => {
+    e.preventDefault();
+    document.getElementById("confirmDownloadModal").style.display = "flex";
+  };
+
+  document.getElementById("confirmDownloadNo").onclick = () => {
+    document.getElementById("confirmDownloadModal").style.display = "none";
+  };
+
+  document.getElementById("confirmDownloadYes").onclick = () => {
+    const link = document.createElement("a");
+    link.href = currentImageUrl;
+    link.download = "Image_" + (currentImageIndex + 1) + ".jpg";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    document.getElementById("confirmDownloadModal").style.display = "none";
+  };
+
   function getTouchDistance(touch1, touch2) {
     const dx = touch2.clientX - touch1.clientX;
     const dy = touch2.clientY - touch1.clientY;
@@ -1966,6 +1989,15 @@
       <div class="confirm-btns">
         <button id="confirmYes" class="btn-yes">Oui</button>
         <button id="confirmNo" class="btn-no">Non</button>
+      </div>
+    </div>
+  </div>
+  <div id="confirmDownloadModal" class="modal-overlay" style="display: none;">
+    <div class="modal-confirm-box">
+      <p>Voulez-vous télécharger cette image ?</p>
+      <div class="confirm-btns">
+        <button id="confirmDownloadYes" class="btn-yes">Oui</button>
+        <button id="confirmDownloadNo" class="btn-no">Non</button>
       </div>
     </div>
   </div>
