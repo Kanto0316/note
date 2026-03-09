@@ -103,7 +103,6 @@ void startTimer(unsigned long totalSec) {
 
 void stopTimer(const String &reason) {
   timerActive = false;
-  remainingSeconds = 0;
 
   digitalWrite(RELAY_PIN, LOW); // Relais OFF
 
@@ -117,6 +116,11 @@ void stopTimer(const String &reason) {
   Serial.println(reason);
 }
 
+void finishTimer(const String &reason) {
+  stopTimer(reason);
+  remainingSeconds = 0;
+}
+
 void processSmsBody(const String &bodyRaw) {
   String body = bodyRaw;
   body.trim();
@@ -126,7 +130,16 @@ void processSmsBody(const String &bodyRaw) {
   Serial.println(body);
 
   if (body == "STOP") {
-    stopTimer("Stop par SMS");
+    if (timerActive) {
+      stopTimer("Play=continuer");
+    }
+    return;
+  }
+
+  if (body == "PLAY") {
+    if (!timerActive && remainingSeconds > 0) {
+      startTimer(remainingSeconds);
+    }
     return;
   }
 
@@ -194,9 +207,9 @@ void setup() {
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("Pret SMS HH:MM:SS");
+  lcd.print("SIM800 pret SMS");
   lcd.setCursor(0, 1);
-  lcd.print("Relais: OFF");
+  lcd.print("Cmd: HH:MM:SS");
 
   Serial.println("[READY] Envoie un SMS HH:MM:SS");
 }
@@ -231,7 +244,7 @@ void loop() {
       displayRemaining(remainingSeconds);
 
       if (remainingSeconds == 0) {
-        stopTimer("Temps termine");
+        finishTimer("Temps termine");
       }
     }
   }
