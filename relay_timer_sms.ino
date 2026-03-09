@@ -129,9 +129,16 @@ void processSmsBody(const String &bodyRaw) {
   Serial.print("[SMS] Message: ");
   Serial.println(body);
 
-  if (body == "STOP") {
+  if (body == "PAUSE") {
     if (timerActive) {
-      stopTimer("Play=continuer");
+      stopTimer("Pause");
+    }
+    return;
+  }
+
+  if (body == "STOP") {
+    if (timerActive || remainingSeconds > 0) {
+      finishTimer("Stop");
     }
     return;
   }
@@ -144,9 +151,9 @@ void processSmsBody(const String &bodyRaw) {
   }
 
   // Si une execution est deja en cours, ignorer toute nouvelle demande
-  // tant qu'un message STOP n'a pas ete recu.
+  // tant qu'un message PAUSE ou STOP n'a pas ete recu.
   if (timerActive) {
-    Serial.println("[INFO] Minuteur deja actif, commande ignoree (envoyer STOP)");
+    Serial.println("[INFO] Minuteur deja actif, commande ignoree (envoyer PAUSE/STOP)");
     return;
   }
 
