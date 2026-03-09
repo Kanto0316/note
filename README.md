@@ -47,6 +47,8 @@ Ce dépôt contient un exemple **prêt à tester** pour ton besoin :
 ## Commandes SMS supportées
 
 - `HH:MM:SS` (ex: `00:10:30`) : lance le minuteur et active le relais.
-- `STOP` : arrête immédiatement le minuteur et coupe le relais.
+- `PAUSE` : met en pause le minuteur sans remettre le temps à zéro (message LCD: `Pause`).
+- `PLAY` : reprend le minuteur à partir du temps restant.
+- `STOP` : remet le minuteur à zéro et coupe le relais (message LCD: `Stop`).
 
 Si le format est invalide, le module répond par SMS avec un message d'erreur.
