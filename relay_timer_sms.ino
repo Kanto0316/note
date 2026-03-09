@@ -14,6 +14,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 SoftwareSerial sim800(SIM800_RX_PIN, SIM800_TX_PIN);
 String gsmBuffer;
 String lastSender;
+bool modemConfigured = false;
 
 // ------------------ Timer ------------------
 bool timerActive = false;
@@ -26,6 +27,63 @@ void sendAT(const char *cmd, unsigned long waitMs = 400) {
   while (sim800.available()) {
     Serial.write(sim800.read());
   }
+}
+
+bool sendATExpect(const char *cmd, const char *expected, unsigned long timeoutMs = 2000) {
+  sim800.println(cmd);
+
+  String response;
+  unsigned long start = millis();
+  while (millis() - start < timeoutMs) {
+    while (sim800.available()) {
+      char c = (char)sim800.read();
+      response += c;
+      Serial.write(c);
+    }
+
+    if (response.indexOf(expected) >= 0) {
+      return true;
+    }
+
+    delay(10);
+  }
+
+  Serial.print("[WARN] Timeout commande: ");
+  Serial.println(cmd);
+  return false;
+}
+
+bool waitForModemReady() {
+  // A froid, le SIM800 peut prendre plusieurs secondes avant de repondre.
+  for (uint8_t attempt = 0; attempt < 15; attempt++) {
+    if (sendATExpect("AT", "OK", 1000)) {
+      return true;
+    }
+    delay(500);
+  }
+
+  Serial.println("[ERROR] SIM800 non pret");
+  return false;
+}
+
+bool configureModemSms() {
+  if (!waitForModemReady()) {
+    return false;
+  }
+
+  // Evite les reponses en echo qui perturbent le parsing.
+  sendATExpect("ATE0", "OK", 1000);
+
+  bool ok = true;
+  ok &= sendATExpect("AT+CMGF=1", "OK", 1500);        // Mode texte SMS
+  ok &= sendATExpect("AT+CNMI=2,2,0,0,0", "OK", 1500); // Push direct des nouveaux SMS
+
+  if (ok) {
+    clearAllStoredSms();
+    Serial.println("[READY] Modem SMS configure");
+  }
+
+  return ok;
 }
 
 void sendSmsTo(const String &number, const String &message) {
@@ -207,10 +265,7 @@ void setup() {
   lcd.print("Init systeme...");
 
   delay(1500);
-  sendAT("AT");
-  sendAT("AT+CMGF=1");      // Mode texte SMS
-  clearAllStoredSms();       // Nettoyage au demarrage: aucun ancien SMS conserve
-  sendAT("AT+CNMI=2,2,0,0,0"); // Push direct des nouveaux SMS
+  modemConfigured = configureModemSms();
 
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -222,6 +277,14 @@ void setup() {
 }
 
 void loop() {
+  if (!modemConfigured) {
+    modemConfigured = configureModemSms();
+    if (!modemConfigured) {
+      delay(1500);
+      return;
+    }
+  }
+
   // Lecture non bloquante du flux GSM
   while (sim800.available()) {
     char c = (char)sim800.read();
