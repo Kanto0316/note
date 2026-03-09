@@ -119,6 +119,13 @@ void processSmsBody(const String &bodyRaw) {
     return;
   }
 
+  // Si une execution est deja en cours, ignorer toute nouvelle demande
+  // tant qu'un message STOP n'a pas ete recu.
+  if (timerActive) {
+    Serial.println("[INFO] Minuteur deja actif, commande ignoree (envoyer STOP)");
+    return;
+  }
+
   unsigned long seconds = 0;
   if (!parseTimeToSeconds(body, seconds)) {
     return;
