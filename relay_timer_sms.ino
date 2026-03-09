@@ -20,6 +20,7 @@ bool modemConfigured = false;
 bool timerActive = false;
 unsigned long remainingSeconds = 0;
 unsigned long lastTickMs = 0;
+bool chargeModeActive = false;
 
 void sendAT(const char *cmd, unsigned long waitMs = 400) {
   sim800.println(cmd);
@@ -181,6 +182,35 @@ void finishTimer(const String &reason) {
   remainingSeconds = 0;
 }
 
+void showInitialScreen() {
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("SIM800 pret SMS");
+  lcd.setCursor(0, 1);
+  lcd.print("Cmd: HH:MM:SS");
+}
+
+void activateChargeMode() {
+  chargeModeActive = true;
+  digitalWrite(RELAY_PIN, HIGH); // Relais ON
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Mode CHARGE ON");
+  lcd.setCursor(0, 1);
+  lcd.print("Attente FULL");
+
+  Serial.println("[INFO] Mode CHARGE active");
+}
+
+void deactivateChargeMode() {
+  chargeModeActive = false;
+  digitalWrite(RELAY_PIN, LOW); // Relais OFF
+  showInitialScreen();
+
+  Serial.println("[INFO] Mode CHARGE termine");
+}
+
 void processSmsBody(const String &bodyRaw) {
   String body = bodyRaw;
   body.trim();
@@ -188,6 +218,30 @@ void processSmsBody(const String &bodyRaw) {
 
   Serial.print("[SMS] Message: ");
   Serial.println(body);
+
+  if (body == "CHARGE FULL") {
+    if (chargeModeActive) {
+      deactivateChargeMode();
+    } else {
+      Serial.println("[INFO] CHARGE FULL ignore (mode CHARGE inactif)");
+    }
+    return;
+  }
+
+  if (body == "CHARGE") {
+    // N'autoriser que si aucun timer actif ou en pause, et hors mode charge deja actif.
+    if (!chargeModeActive && !timerActive && remainingSeconds == 0) {
+      activateChargeMode();
+    } else {
+      Serial.println("[INFO] CHARGE refuse (timer actif/pause ou mode deja actif)");
+    }
+    return;
+  }
+
+  if (chargeModeActive) {
+    Serial.println("[INFO] Mode CHARGE actif, commande ignoree (envoyer CHARGE FULL)");
+    return;
+  }
 
   if (body == "PAUSE") {
     if (timerActive) {
@@ -269,11 +323,7 @@ void setup() {
   delay(1500);
   modemConfigured = configureModemSms();
 
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("SIM800 pret SMS");
-  lcd.setCursor(0, 1);
-  lcd.print("Cmd: HH:MM:SS");
+  showInitialScreen();
 
   Serial.println("[READY] Envoie un SMS HH:MM:SS");
 }
