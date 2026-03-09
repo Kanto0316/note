@@ -125,6 +125,8 @@ bool parseTimeToSeconds(const String &text, unsigned long &secondsOut) {
   int ss = text.substring(6, 8).toInt();
 
   if (mm > 59 || ss > 59) return false;
+  if (hh > 24) return false;
+  if (hh == 24 && (mm > 0 || ss > 0)) return false;
 
   secondsOut = (unsigned long)hh * 3600UL + (unsigned long)mm * 60UL + (unsigned long)ss;
   return secondsOut > 0;
