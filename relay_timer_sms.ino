@@ -42,6 +42,17 @@ void sendSmsTo(const String &number, const String &message) {
   delay(700);
 }
 
+void clearAllStoredSms() {
+  // Supprime tous les SMS stockes dans la memoire du module.
+  // 1,4 = efface tous les messages (lus, non lus, envoyes, brouillons).
+  sim800.println("AT+CMGD=1,4");
+  delay(800);
+  while (sim800.available()) {
+    Serial.write(sim800.read());
+  }
+  Serial.println("[SMS] Boite SMS videe");
+}
+
 bool parseTimeToSeconds(const String &text, unsigned long &secondsOut) {
   if (text.length() != 8) return false;
   if (text[2] != ':' || text[5] != ':') return false;
@@ -156,6 +167,7 @@ void handleGsmLine(String line) {
       if (sim800.available()) {
         String body = sim800.readStringUntil('\n');
         processSmsBody(body);
+        clearAllStoredSms();
         break;
       }
     }
@@ -177,6 +189,7 @@ void setup() {
   delay(1500);
   sendAT("AT");
   sendAT("AT+CMGF=1");      // Mode texte SMS
+  clearAllStoredSms();       // Nettoyage au demarrage: aucun ancien SMS conserve
   sendAT("AT+CNMI=2,2,0,0,0"); // Push direct des nouveaux SMS
 
   lcd.clear();
