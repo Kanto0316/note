@@ -21,6 +21,15 @@ bool timerActive = false;
 unsigned long remainingSeconds = 0;
 unsigned long lastTickMs = 0;
 bool chargeModeActive = false;
+bool pauseBlinkVisible = true;
+unsigned long lastPauseBlinkMs = 0;
+
+void formatClock(unsigned long totalSec, char *out, size_t outSize) {
+  unsigned int hh = totalSec / 3600UL;
+  unsigned int mm = (totalSec % 3600UL) / 60UL;
+  unsigned int ss = totalSec % 60UL;
+  snprintf(out, outSize, "%02u:%02u:%02u", hh, mm, ss);
+}
 
 void sendAT(const char *cmd, unsigned long waitMs = 400) {
   sim800.println(cmd);
@@ -134,18 +143,12 @@ bool parseTimeToSeconds(const String &text, unsigned long &secondsOut) {
 }
 
 void displayRemaining(unsigned long totalSec) {
-  unsigned int hh = totalSec / 3600UL;
-  unsigned int mm = (totalSec % 3600UL) / 60UL;
-  unsigned int ss = totalSec % 60UL;
-
-  char line1[17];
   char line2[17];
-  snprintf(line1, sizeof(line1), "Temps restant:");
-  snprintf(line2, sizeof(line2), "%02uh %02um %02us", hh, mm, ss);
+  formatClock(totalSec, line2, sizeof(line2));
 
   lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print(line1);
+  lcd.print("MINUTEUR ACTIF ");
   lcd.setCursor(0, 1);
   lcd.print(line2);
 
@@ -153,10 +156,26 @@ void displayRemaining(unsigned long totalSec) {
   Serial.println(line2);
 }
 
+void displayPauseScreen(bool showValue) {
+  char line2[17];
+  if (showValue) {
+    formatClock(remainingSeconds, line2, sizeof(line2));
+  } else {
+    snprintf(line2, sizeof(line2), "        ");
+  }
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("PAUSE - SMS PLAY");
+  lcd.setCursor(0, 1);
+  lcd.print(line2);
+}
+
 void startTimer(unsigned long totalSec) {
   remainingSeconds = totalSec;
   timerActive = true;
   lastTickMs = millis();
+  pauseBlinkVisible = true;
 
   digitalWrite(RELAY_PIN, HIGH); // Relais ON
   displayRemaining(remainingSeconds);
@@ -246,6 +265,9 @@ void processSmsBody(const String &bodyRaw) {
   if (body == "PAUSE") {
     if (timerActive) {
       stopTimer("Pause");
+      pauseBlinkVisible = true;
+      lastPauseBlinkMs = millis();
+      displayPauseScreen(true);
     }
     return;
   }
@@ -368,6 +390,13 @@ void loop() {
       if (remainingSeconds == 0) {
         finishTimer("Temps termine");
       }
+    }
+  } else if (remainingSeconds > 0 && !chargeModeActive) {
+    unsigned long now = millis();
+    if (now - lastPauseBlinkMs >= 500UL) {
+      lastPauseBlinkMs = now;
+      pauseBlinkVisible = !pauseBlinkVisible;
+      displayPauseScreen(pauseBlinkVisible);
     }
   }
 }
