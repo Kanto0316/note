@@ -116,18 +116,15 @@ void processSmsBody(const String &bodyRaw) {
 
   if (body == "STOP") {
     stopTimer("Stop par SMS");
-    sendSmsTo(lastSender, "Timer arrete. Relais coupe.");
     return;
   }
 
   unsigned long seconds = 0;
   if (!parseTimeToSeconds(body, seconds)) {
-    sendSmsTo(lastSender, "Format invalide. Utilise HH:MM:SS, ex: 03:00:00");
     return;
   }
 
   startTimer(seconds);
-  sendSmsTo(lastSender, "Timer demarre: " + body);
 }
 
 void handleGsmLine(String line) {
@@ -215,7 +212,6 @@ void loop() {
 
       if (remainingSeconds == 0) {
         stopTimer("Temps termine");
-        sendSmsTo(lastSender, "Temps termine. Relais coupe automatiquement.");
       }
     }
   }
