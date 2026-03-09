@@ -7,6 +7,9 @@ Ce dépôt contient un exemple **prêt à tester** pour ton besoin :
 - le compte à rebours démarre,
 - et à `00:00:00` le relais se coupe automatiquement.
 
+- au démarrage, les anciens SMS stockés sur le SIM800L sont automatiquement supprimés,
+- après chaque SMS traité, la mémoire SMS est nettoyée pour éviter de rejouer d'anciens messages,
+
 ## Fichier principal
 
 - `relay_timer_sms.ino`
