@@ -146,9 +146,10 @@ void displayRemaining(unsigned long totalSec) {
   char line2[17];
   formatClock(totalSec, line2, sizeof(line2));
 
-  lcd.clear();
   lcd.setCursor(0, 0);
-  lcd.print("MINUTEUR ACTIF ");
+  lcd.print("MINUTEUR ACTIF  ");
+  lcd.setCursor(0, 1);
+  lcd.print("                ");
   lcd.setCursor(0, 1);
   lcd.print(line2);
 
@@ -161,12 +162,13 @@ void displayPauseScreen(bool showValue) {
   if (showValue) {
     formatClock(remainingSeconds, line2, sizeof(line2));
   } else {
-    snprintf(line2, sizeof(line2), "        ");
+    snprintf(line2, sizeof(line2), "                ");
   }
 
-  lcd.clear();
   lcd.setCursor(0, 0);
   lcd.print("PAUSE - SMS PLAY");
+  lcd.setCursor(0, 1);
+  lcd.print("                ");
   lcd.setCursor(0, 1);
   lcd.print(line2);
 }
