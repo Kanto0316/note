@@ -31,6 +31,7 @@ bool rtcClockBlinkVisible = true;
 unsigned long lastIdleMinuteEpoch = 0;
 bool lastIdleMinuteEpochInitialized = false;
 unsigned long lastRtcClockBlinkToggleMs = 0;
+char lastTimerHeaderLine[17] = "";
 
 RTC_DS3231 rtc;
 bool rtcAvailable = false;
@@ -283,10 +284,15 @@ void displayRemaining(unsigned long totalSec) {
   int endCol = (16 - (int)strlen(line1)) / 2;
   if (endCol < 0) endCol = 0;
 
-  lcd.setCursor(0, 0);
-  lcd.print("                ");
-  lcd.setCursor(endCol, 0);
-  lcd.print(line1);
+  if (strncmp(lastTimerHeaderLine, line1, sizeof(lastTimerHeaderLine)) != 0) {
+    lcd.setCursor(0, 0);
+    lcd.print("                ");
+    lcd.setCursor(endCol, 0);
+    lcd.print(line1);
+    strncpy(lastTimerHeaderLine, line1, sizeof(lastTimerHeaderLine) - 1);
+    lastTimerHeaderLine[sizeof(lastTimerHeaderLine) - 1] = '\0';
+  }
+
   lcd.setCursor(0, 1);
   lcd.print("                ");
   lcd.setCursor(timerCol, 1);
@@ -305,7 +311,9 @@ void displayPauseScreen(bool showValue) {
   }
 
   lcd.setCursor(0, 0);
-  lcd.print("PAUSE - SMS PLAY");
+  lcd.print("                ");
+  lcd.setCursor(5, 0);
+  lcd.print("Pause");
   lcd.setCursor(0, 1);
   lcd.print("                ");
   lcd.setCursor(0, 1);
@@ -322,6 +330,7 @@ void startTimer(unsigned long totalSec) {
   }
   lastTickMs = millis();
   pauseBlinkVisible = true;
+  lastTimerHeaderLine[0] = '\0';
 
   digitalWrite(RELAY_PIN, HIGH); // Relais ON
   if (rtcAvailable) {
