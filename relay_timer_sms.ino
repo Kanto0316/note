@@ -16,6 +16,8 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 SoftwareSerial sim800(SIM800_RX_PIN, SIM800_TX_PIN);
 String gsmBuffer;
 String lastSender;
+bool waitingForSmsBody = false;
+String pendingSmsSender;
 bool modemConfigured = false;
 
 // ------------------ Timer ------------------
@@ -606,6 +608,13 @@ void handleGsmLine(String line) {
   line.trim();
   if (line.length() == 0) return;
 
+  if (waitingForSmsBody) {
+    waitingForSmsBody = false;
+    processSmsBody(line, pendingSmsSender);
+    clearAllStoredSms();
+    return;
+  }
+
   Serial.print("[GSM] ");
   Serial.println(line);
 
@@ -617,17 +626,8 @@ void handleGsmLine(String line) {
       Serial.print("[SMS] Expediteur: ");
       Serial.println(lastSender);
     }
-
-    // Le corps SMS est sur la ligne suivante
-    unsigned long timeout = millis() + 3000;
-    while (millis() < timeout) {
-      if (sim800.available()) {
-        String body = sim800.readStringUntil('\n');
-        processSmsBody(body, lastSender);
-        clearAllStoredSms();
-        break;
-      }
-    }
+    pendingSmsSender = lastSender;
+    waitingForSmsBody = true;
   }
 }
 
