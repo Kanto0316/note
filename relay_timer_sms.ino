@@ -27,6 +27,7 @@ bool pauseBlinkVisible = true;
 unsigned long lastPauseBlinkMs = 0;
 uint32_t timerEndEpoch = 0;
 unsigned long lastIdleRtcDisplayMs = 0;
+bool rtcClockBlinkVisible = true;
 
 RTC_DS3231 rtc;
 bool rtcAvailable = false;
@@ -347,10 +348,12 @@ void showInitialScreen() {
   char dateLine[17];
   char timeLine[17];
   snprintf(dateLine, sizeof(dateLine), "%02d/%02d/%04d", now.day(), now.month(), now.year());
-  snprintf(timeLine, sizeof(timeLine), "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
+  snprintf(timeLine, sizeof(timeLine), "%02d%c%02d", now.hour(), rtcClockBlinkVisible ? ':' : ' ', now.minute());
 
   int dateCol = (16 - (int)strlen(dateLine)) / 2;
   if (dateCol < 0) dateCol = 0;
+  int timeCol = (16 - (int)strlen(timeLine)) / 2;
+  if (timeCol < 0) timeCol = 0;
 
   lcd.setCursor(0, 0);
   lcd.print("                ");
@@ -358,7 +361,7 @@ void showInitialScreen() {
   lcd.print(dateLine);
   lcd.setCursor(0, 1);
   lcd.print("                ");
-  lcd.setCursor(0, 1);
+  lcd.setCursor(timeCol, 1);
   lcd.print(timeLine);
 }
 
@@ -566,8 +569,9 @@ void loop() {
     }
   } else if (!chargeModeActive && remainingSeconds == 0) {
     unsigned long now = millis();
-    if (now - lastIdleRtcDisplayMs >= 1000UL) {
+    if (now - lastIdleRtcDisplayMs >= 500UL) {
       lastIdleRtcDisplayMs = now;
+      rtcClockBlinkVisible = !rtcClockBlinkVisible;
       showInitialScreen();
     }
   }
