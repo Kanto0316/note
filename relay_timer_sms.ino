@@ -518,10 +518,6 @@ void deactivateChargeMode() {
   Serial.println("[INFO] Mode CHARGE termine");
 }
 
-bool senderCanControlCurrentTimer(const String &sender) {
-  return activeTimerOwner.length() == 0 || activeTimerOwner == sender;
-}
-
 void processSmsBody(const String &bodyRaw, const String &sender) {
   String body = bodyRaw;
   body.trim();
@@ -556,11 +552,6 @@ void processSmsBody(const String &bodyRaw, const String &sender) {
 
   if (body == "PAUSE") {
     if (timerActive) {
-      if (!senderCanControlCurrentTimer(sender)) {
-        Serial.println("[INFO] PAUSE refuse: seul l'expediteur qui a demarre le minuteur peut controler");
-        return;
-      }
-
       stopTimer("Pause");
       pauseBlinkVisible = true;
       lastPauseBlinkMs = millis();
@@ -574,11 +565,6 @@ void processSmsBody(const String &bodyRaw, const String &sender) {
 
   if (body == "STOP") {
     if (timerActive || remainingSeconds > 0) {
-      if (!senderCanControlCurrentTimer(sender)) {
-        Serial.println("[INFO] STOP refuse: seul l'expediteur qui a demarre le minuteur peut controler");
-        return;
-      }
-
       finishTimer("Stop");
     }
     return;
