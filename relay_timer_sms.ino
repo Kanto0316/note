@@ -26,6 +26,7 @@ bool chargeModeActive = false;
 bool pauseBlinkVisible = true;
 unsigned long lastPauseBlinkMs = 0;
 uint32_t timerEndEpoch = 0;
+unsigned long lastIdleRtcDisplayMs = 0;
 
 RTC_DS3231 rtc;
 bool rtcAvailable = false;
@@ -333,10 +334,32 @@ void finishTimer(const String &reason) {
 
 void showInitialScreen() {
   lcd.clear();
+
+  if (!rtcAvailable) {
+    lcd.setCursor(0, 0);
+    lcd.print("SIM800 pret SMS");
+    lcd.setCursor(0, 1);
+    lcd.print("Cmd: HH:MM:SS");
+    return;
+  }
+
+  DateTime now = rtc.now();
+  char dateLine[17];
+  char timeLine[17];
+  snprintf(dateLine, sizeof(dateLine), "%02d/%02d/%04d", now.day(), now.month(), now.year());
+  snprintf(timeLine, sizeof(timeLine), "%02d:%02d:%02d", now.hour(), now.minute(), now.second());
+
+  int dateCol = (16 - (int)strlen(dateLine)) / 2;
+  if (dateCol < 0) dateCol = 0;
+
   lcd.setCursor(0, 0);
-  lcd.print("SIM800 pret SMS");
+  lcd.print("                ");
+  lcd.setCursor(dateCol, 0);
+  lcd.print(dateLine);
   lcd.setCursor(0, 1);
-  lcd.print("Cmd: HH:MM:SS");
+  lcd.print("                ");
+  lcd.setCursor(0, 1);
+  lcd.print(timeLine);
 }
 
 void activateChargeMode() {
@@ -540,6 +563,12 @@ void loop() {
       lastPauseBlinkMs = now;
       pauseBlinkVisible = !pauseBlinkVisible;
       displayPauseScreen(pauseBlinkVisible);
+    }
+  } else if (!chargeModeActive && remainingSeconds == 0) {
+    unsigned long now = millis();
+    if (now - lastIdleRtcDisplayMs >= 1000UL) {
+      lastIdleRtcDisplayMs = now;
+      showInitialScreen();
     }
   }
 }
