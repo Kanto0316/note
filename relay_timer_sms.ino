@@ -22,6 +22,10 @@ bool modemConfigured = false;
 bool timerActive = false;
 unsigned long remainingSeconds = 0;
 unsigned long lastTickMs = 0;
+String activeTimerOwner;
+bool queuedTimerPending = false;
+unsigned long queuedTimerSeconds = 0;
+String queuedTimerOwner;
 bool chargeModeActive = false;
 bool pauseBlinkVisible = true;
 unsigned long lastPauseBlinkMs = 0;
@@ -43,11 +47,27 @@ struct PersistedTimerState {
   uint8_t timerActive;
   uint32_t endEpoch;
   uint32_t pausedRemaining;
+  char owner[20];
+  uint8_t queuedPending;
+  uint32_t queuedSeconds;
+  char queuedOwner[20];
   uint8_t checksum;
 };
 
 const uint8_t TIMER_STATE_MARKER = 0x5A;
 const int EEPROM_TIMER_STATE_ADDR = 0;
+
+void copyStringToFixed(char *dest, size_t destSize, const String &src) {
+  if (destSize == 0) return;
+
+  size_t copyLen = src.length();
+  if (copyLen >= destSize) {
+    copyLen = destSize - 1;
+  }
+
+  memcpy(dest, src.c_str(), copyLen);
+  dest[copyLen] = '\0';
+}
 
 uint8_t computeStateChecksum(const PersistedTimerState &state) {
   const uint8_t *ptr = (const uint8_t *)&state;
@@ -66,6 +86,10 @@ void persistTimerState() {
   state.timerActive = timerActive ? 1 : 0;
   state.endEpoch = timerEndEpoch;
   state.pausedRemaining = remainingSeconds;
+  copyStringToFixed(state.owner, sizeof(state.owner), activeTimerOwner);
+  state.queuedPending = queuedTimerPending ? 1 : 0;
+  state.queuedSeconds = queuedTimerSeconds;
+  copyStringToFixed(state.queuedOwner, sizeof(state.queuedOwner), queuedTimerOwner);
   state.checksum = 0;
   state.checksum = computeStateChecksum(state);
   EEPROM.put(EEPROM_TIMER_STATE_ADDR, state);
@@ -77,6 +101,10 @@ void clearPersistedTimerState() {
   state.timerActive = 0;
   state.endEpoch = 0;
   state.pausedRemaining = 0;
+  state.owner[0] = '\0';
+  state.queuedPending = 0;
+  state.queuedSeconds = 0;
+  state.queuedOwner[0] = '\0';
   state.checksum = 0;
   EEPROM.put(EEPROM_TIMER_STATE_ADDR, state);
 }
@@ -123,6 +151,11 @@ void restoreTimerAfterPowerCut() {
     return;
   }
 
+  activeTimerOwner = String(state.owner);
+  queuedTimerPending = state.queuedPending == 1 && state.queuedSeconds > 0;
+  queuedTimerSeconds = state.queuedSeconds;
+  queuedTimerOwner = String(state.queuedOwner);
+
   if (state.timerActive) {
     unsigned long nowEpoch = rtcNowEpoch();
     if (state.pausedRemaining > 0) {
@@ -148,6 +181,11 @@ void restoreTimerAfterPowerCut() {
     lastPauseBlinkMs = millis();
     displayPauseScreen(true);
     Serial.println("[RTC] Pause restauree apres coupure");
+  }
+
+  if (!timerActive && remainingSeconds == 0 && !queuedTimerPending) {
+    activeTimerOwner = "";
+    queuedTimerOwner = "";
   }
 }
 
@@ -326,9 +364,10 @@ void displayPauseScreen(bool showValue) {
   lcd.print(line2);
 }
 
-void startTimer(unsigned long totalSec) {
+void startTimer(unsigned long totalSec, const String &owner) {
   remainingSeconds = totalSec;
   timerActive = true;
+  activeTimerOwner = owner;
   if (rtcAvailable) {
     timerEndEpoch = rtcNowEpoch() + totalSec;
   } else {
@@ -364,6 +403,21 @@ void stopTimer(const String &reason) {
 void finishTimer(const String &reason) {
   stopTimer(reason);
   remainingSeconds = 0;
+
+  if (queuedTimerPending && queuedTimerSeconds > 0) {
+    unsigned long nextSeconds = queuedTimerSeconds;
+    String nextOwner = queuedTimerOwner;
+
+    queuedTimerPending = false;
+    queuedTimerSeconds = 0;
+    queuedTimerOwner = "";
+
+    Serial.println("[INFO] Lancement du minuteur en attente");
+    startTimer(nextSeconds, nextOwner);
+    return;
+  }
+
+  activeTimerOwner = "";
   clearPersistedTimerState();
 }
 
@@ -491,7 +545,11 @@ void deactivateChargeMode() {
   Serial.println("[INFO] Mode CHARGE termine");
 }
 
-void processSmsBody(const String &bodyRaw) {
+bool senderCanControlCurrentTimer(const String &sender) {
+  return activeTimerOwner.length() == 0 || activeTimerOwner == sender;
+}
+
+void processSmsBody(const String &bodyRaw, const String &sender) {
   String body = bodyRaw;
   body.trim();
   body.toUpperCase();
@@ -525,6 +583,11 @@ void processSmsBody(const String &bodyRaw) {
 
   if (body == "PAUSE") {
     if (timerActive) {
+      if (!senderCanControlCurrentTimer(sender)) {
+        Serial.println("[INFO] PAUSE refuse: seul l'expediteur qui a demarre le minuteur peut controler");
+        return;
+      }
+
       stopTimer("Pause");
       pauseBlinkVisible = true;
       lastPauseBlinkMs = millis();
@@ -538,6 +601,11 @@ void processSmsBody(const String &bodyRaw) {
 
   if (body == "STOP") {
     if (timerActive || remainingSeconds > 0) {
+      if (!senderCanControlCurrentTimer(sender)) {
+        Serial.println("[INFO] STOP refuse: seul l'expediteur qui a demarre le minuteur peut controler");
+        return;
+      }
+
       finishTimer("Stop");
     }
     return;
@@ -545,15 +613,8 @@ void processSmsBody(const String &bodyRaw) {
 
   if (body == "PLAY") {
     if (!timerActive && remainingSeconds > 0) {
-      startTimer(remainingSeconds);
+      startTimer(remainingSeconds, activeTimerOwner);
     }
-    return;
-  }
-
-  // Si une execution est deja en cours, ignorer toute nouvelle demande
-  // tant qu'un message PAUSE ou STOP n'a pas ete recu.
-  if (timerActive) {
-    Serial.println("[INFO] Minuteur deja actif, commande ignoree (envoyer PAUSE/STOP)");
     return;
   }
 
@@ -562,7 +623,18 @@ void processSmsBody(const String &bodyRaw) {
     return;
   }
 
-  startTimer(seconds);
+  if (timerActive) {
+    queuedTimerPending = true;
+    queuedTimerSeconds = seconds;
+    queuedTimerOwner = sender;
+    if (rtcAvailable) {
+      persistTimerState();
+    }
+    Serial.println("[INFO] Minuteur actif: nouvelle demande mise en attente");
+    return;
+  }
+
+  startTimer(seconds, sender);
 }
 
 void handleGsmLine(String line) {
@@ -586,7 +658,7 @@ void handleGsmLine(String line) {
     while (millis() < timeout) {
       if (sim800.available()) {
         String body = sim800.readStringUntil('\n');
-        processSmsBody(body);
+        processSmsBody(body, lastSender);
         clearAllStoredSms();
         break;
       }
