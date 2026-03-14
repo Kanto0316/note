@@ -1,6 +1,8 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <SoftwareSerial.h>
+#include <RTClib.h>
+#include <EEPROM.h>
 
 // ------------------ Configuration broches ------------------
 const uint8_t SIM800_RX_PIN = 7;   // Arduino lit SIM800 TX
@@ -23,6 +25,122 @@ unsigned long lastTickMs = 0;
 bool chargeModeActive = false;
 bool pauseBlinkVisible = true;
 unsigned long lastPauseBlinkMs = 0;
+uint32_t timerEndEpoch = 0;
+
+RTC_DS3231 rtc;
+bool rtcAvailable = false;
+
+struct PersistedTimerState {
+  uint8_t marker;
+  uint8_t timerActive;
+  uint32_t endEpoch;
+  uint32_t pausedRemaining;
+  uint8_t checksum;
+};
+
+const uint8_t TIMER_STATE_MARKER = 0x5A;
+const int EEPROM_TIMER_STATE_ADDR = 0;
+
+uint8_t computeStateChecksum(const PersistedTimerState &state) {
+  const uint8_t *ptr = (const uint8_t *)&state;
+  uint8_t sum = 0;
+
+  for (size_t i = 0; i < sizeof(PersistedTimerState) - 1; i++) {
+    sum ^= ptr[i];
+  }
+
+  return sum;
+}
+
+void persistTimerState() {
+  PersistedTimerState state;
+  state.marker = TIMER_STATE_MARKER;
+  state.timerActive = timerActive ? 1 : 0;
+  state.endEpoch = timerEndEpoch;
+  state.pausedRemaining = remainingSeconds;
+  state.checksum = 0;
+  state.checksum = computeStateChecksum(state);
+  EEPROM.put(EEPROM_TIMER_STATE_ADDR, state);
+}
+
+void clearPersistedTimerState() {
+  PersistedTimerState state;
+  state.marker = 0;
+  state.timerActive = 0;
+  state.endEpoch = 0;
+  state.pausedRemaining = 0;
+  state.checksum = 0;
+  EEPROM.put(EEPROM_TIMER_STATE_ADDR, state);
+}
+
+bool loadPersistedTimerState(PersistedTimerState &state) {
+  EEPROM.get(EEPROM_TIMER_STATE_ADDR, state);
+
+  if (state.marker != TIMER_STATE_MARKER) return false;
+  if (computeStateChecksum(state) != state.checksum) return false;
+
+  return true;
+}
+
+unsigned long rtcNowEpoch() {
+  if (!rtcAvailable) return 0;
+  DateTime now = rtc.now();
+  return (unsigned long)now.unixtime();
+}
+
+void syncTimerFromRtc() {
+  if (!timerActive || !rtcAvailable) {
+    return;
+  }
+
+  unsigned long nowEpoch = rtcNowEpoch();
+  if (nowEpoch >= timerEndEpoch) {
+    remainingSeconds = 0;
+    finishTimer("Temps termine");
+    clearPersistedTimerState();
+    return;
+  }
+
+  unsigned long newRemaining = timerEndEpoch - nowEpoch;
+  if (newRemaining != remainingSeconds) {
+    remainingSeconds = newRemaining;
+    displayRemaining(remainingSeconds);
+  }
+}
+
+void restoreTimerAfterPowerCut() {
+  if (!rtcAvailable) return;
+  PersistedTimerState state;
+  if (!loadPersistedTimerState(state)) {
+    return;
+  }
+
+  if (state.timerActive) {
+    unsigned long nowEpoch = rtcNowEpoch();
+    if (state.endEpoch > nowEpoch) {
+      timerActive = true;
+      timerEndEpoch = state.endEpoch;
+      remainingSeconds = timerEndEpoch - nowEpoch;
+      digitalWrite(RELAY_PIN, HIGH);
+      displayRemaining(remainingSeconds);
+      Serial.println("[RTC] Minuteur restaure apres coupure");
+      return;
+    }
+
+    clearPersistedTimerState();
+    finishTimer("Temps termine");
+    return;
+  }
+
+  if (state.pausedRemaining > 0) {
+    timerActive = false;
+    remainingSeconds = state.pausedRemaining;
+    pauseBlinkVisible = true;
+    lastPauseBlinkMs = millis();
+    displayPauseScreen(true);
+    Serial.println("[RTC] Pause restauree apres coupure");
+  }
+}
 
 void formatClock(unsigned long totalSec, char *out, size_t outSize) {
   unsigned int hh = totalSec / 3600UL;
@@ -176,15 +294,24 @@ void displayPauseScreen(bool showValue) {
 void startTimer(unsigned long totalSec) {
   remainingSeconds = totalSec;
   timerActive = true;
+  if (rtcAvailable) {
+    timerEndEpoch = rtcNowEpoch() + totalSec;
+  } else {
+    timerEndEpoch = 0;
+  }
   lastTickMs = millis();
   pauseBlinkVisible = true;
 
   digitalWrite(RELAY_PIN, HIGH); // Relais ON
+  if (rtcAvailable) {
+    persistTimerState();
+  }
   displayRemaining(remainingSeconds);
 }
 
 void stopTimer(const String &reason) {
   timerActive = false;
+  timerEndEpoch = 0;
 
   digitalWrite(RELAY_PIN, LOW); // Relais OFF
 
@@ -201,6 +328,7 @@ void stopTimer(const String &reason) {
 void finishTimer(const String &reason) {
   stopTimer(reason);
   remainingSeconds = 0;
+  clearPersistedTimerState();
 }
 
 void showInitialScreen() {
@@ -269,6 +397,9 @@ void processSmsBody(const String &bodyRaw) {
       stopTimer("Pause");
       pauseBlinkVisible = true;
       lastPauseBlinkMs = millis();
+      if (rtcAvailable) {
+        persistTimerState();
+      }
       displayPauseScreen(true);
     }
     return;
@@ -339,6 +470,11 @@ void setup() {
   Serial.begin(9600);
   sim800.begin(9600);
 
+  rtcAvailable = rtc.begin();
+  if (!rtcAvailable) {
+    Serial.println("[ERROR] RTC non detecte");
+  }
+
   lcd.init();
   lcd.backlight();
   lcd.setCursor(0, 0);
@@ -348,6 +484,9 @@ void setup() {
   modemConfigured = configureModemSms();
 
   showInitialScreen();
+  if (rtcAvailable) {
+    restoreTimerAfterPowerCut();
+  }
 
   Serial.println("[READY] Envoie un SMS HH:MM:SS");
 }
@@ -381,16 +520,18 @@ void loop() {
   if (timerActive) {
     unsigned long now = millis();
     if (now - lastTickMs >= 1000UL) {
-      lastTickMs += 1000UL;
-
-      if (remainingSeconds > 0) {
-        remainingSeconds--;
-      }
-
-      displayRemaining(remainingSeconds);
-
-      if (remainingSeconds == 0) {
-        finishTimer("Temps termine");
+      lastTickMs = now;
+      if (rtcAvailable) {
+        syncTimerFromRtc();
+        persistTimerState();
+      } else {
+        if (remainingSeconds > 0) {
+          remainingSeconds--;
+        }
+        displayRemaining(remainingSeconds);
+        if (remainingSeconds == 0) {
+          finishTimer("Temps termine");
+        }
       }
     }
   } else if (remainingSeconds > 0 && !chargeModeActive) {

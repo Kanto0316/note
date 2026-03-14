@@ -6,6 +6,8 @@ Ce dépôt contient un exemple **prêt à tester** pour ton besoin :
 - l'Arduino affiche le temps (`3h 00m 00s`) sur l'écran LCD I2C,
 - le compte à rebours démarre,
 - et à `00:00:00` le relais se coupe automatiquement.
+- le minuteur est piloté par le RTC (DS3231), pour garder un temps juste même après redémarrage.
+- après une coupure de courant, le minuteur reprend automatiquement (si RTC alimenté).
 
 - au démarrage, les anciens SMS stockés sur le SIM800L sont automatiquement supprimés,
 - après chaque SMS traité, la mémoire SMS est nettoyée pour éviter de rejouer d'anciens messages,
@@ -26,12 +28,15 @@ Ce dépôt contient un exemple **prêt à tester** pour ton besoin :
 
 - `LiquidCrystal_I2C`
 - `SoftwareSerial` (intégrée Arduino AVR)
+- `RTClib`
+- `EEPROM` (intégrée Arduino AVR)
 
 ## Câblage utilisé dans l'exemple
 
 - **SIM800L TX** -> Arduino D7 (RX SoftwareSerial)
 - **SIM800L RX** -> Arduino D8 (TX SoftwareSerial)
 - **Relais IN** -> Arduino D4
+- **RTC DS3231 SDA/SCL** -> SDA/SCL Arduino
 - **LCD I2C SDA/SCL** -> SDA/SCL Arduino
 
 > ⚠️ Le SIM800L fonctionne en logique/alimentation spécifiques (souvent ~4V et pics de courant élevés). Utilise une alimentation adaptée et un niveau logique sûr côté RX SIM800L.
