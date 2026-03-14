@@ -28,6 +28,9 @@ unsigned long lastPauseBlinkMs = 0;
 uint32_t timerEndEpoch = 0;
 unsigned long lastIdleRtcDisplayMs = 0;
 bool rtcClockBlinkVisible = true;
+unsigned long lastIdleMinuteEpoch = 0;
+bool lastIdleMinuteEpochInitialized = false;
+unsigned long rtcClockBlinkRestoreMs = 0;
 
 RTC_DS3231 rtc;
 bool rtcAvailable = false;
@@ -365,6 +368,38 @@ void showInitialScreen() {
   lcd.print(timeLine);
 }
 
+void refreshIdleRtcScreen() {
+  if (!rtcAvailable) {
+    return;
+  }
+
+  DateTime now = rtc.now();
+  unsigned long currentMinuteEpoch = (unsigned long)(now.unixtime() / 60UL);
+
+  if (!lastIdleMinuteEpochInitialized) {
+    lastIdleMinuteEpoch = currentMinuteEpoch;
+    lastIdleMinuteEpochInitialized = true;
+    rtcClockBlinkVisible = true;
+    rtcClockBlinkRestoreMs = 0;
+    showInitialScreen();
+    return;
+  }
+
+  if (currentMinuteEpoch != lastIdleMinuteEpoch) {
+    lastIdleMinuteEpoch = currentMinuteEpoch;
+    rtcClockBlinkVisible = false;
+    rtcClockBlinkRestoreMs = millis() + 250UL;
+    showInitialScreen();
+    return;
+  }
+
+  if (!rtcClockBlinkVisible && rtcClockBlinkRestoreMs > 0 && millis() >= rtcClockBlinkRestoreMs) {
+    rtcClockBlinkVisible = true;
+    rtcClockBlinkRestoreMs = 0;
+    showInitialScreen();
+  }
+}
+
 void activateChargeMode() {
   chargeModeActive = true;
   digitalWrite(RELAY_PIN, HIGH); // Relais ON
@@ -511,6 +546,8 @@ void setup() {
 
   showInitialScreen();
   if (rtcAvailable) {
+    lastIdleMinuteEpoch = rtcNowEpoch() / 60UL;
+    lastIdleMinuteEpochInitialized = true;
     restoreTimerAfterPowerCut();
   }
 
@@ -569,10 +606,9 @@ void loop() {
     }
   } else if (!chargeModeActive && remainingSeconds == 0) {
     unsigned long now = millis();
-    if (now - lastIdleRtcDisplayMs >= 500UL) {
+    if (now - lastIdleRtcDisplayMs >= 200UL) {
       lastIdleRtcDisplayMs = now;
-      rtcClockBlinkVisible = !rtcClockBlinkVisible;
-      showInitialScreen();
+      refreshIdleRtcScreen();
     }
   }
 }
