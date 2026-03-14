@@ -336,6 +336,19 @@ void finishTimer(const String &reason) {
   clearPersistedTimerState();
 }
 
+void renderIdleTimeLine(const DateTime &now) {
+  char timeLine[17];
+  snprintf(timeLine, sizeof(timeLine), "%02d%c%02d", now.hour(), rtcClockBlinkVisible ? ':' : ' ', now.minute());
+
+  int timeCol = (16 - (int)strlen(timeLine)) / 2;
+  if (timeCol < 0) timeCol = 0;
+
+  lcd.setCursor(0, 1);
+  lcd.print("                ");
+  lcd.setCursor(timeCol, 1);
+  lcd.print(timeLine);
+}
+
 void showInitialScreen() {
   lcd.clear();
 
@@ -349,23 +362,17 @@ void showInitialScreen() {
 
   DateTime now = rtc.now();
   char dateLine[17];
-  char timeLine[17];
   snprintf(dateLine, sizeof(dateLine), "%02d/%02d/%04d", now.day(), now.month(), now.year());
-  snprintf(timeLine, sizeof(timeLine), "%02d%c%02d", now.hour(), rtcClockBlinkVisible ? ':' : ' ', now.minute());
 
   int dateCol = (16 - (int)strlen(dateLine)) / 2;
   if (dateCol < 0) dateCol = 0;
-  int timeCol = (16 - (int)strlen(timeLine)) / 2;
-  if (timeCol < 0) timeCol = 0;
 
   lcd.setCursor(0, 0);
   lcd.print("                ");
   lcd.setCursor(dateCol, 0);
   lcd.print(dateLine);
-  lcd.setCursor(0, 1);
-  lcd.print("                ");
-  lcd.setCursor(timeCol, 1);
-  lcd.print(timeLine);
+
+  renderIdleTimeLine(now);
 }
 
 void refreshIdleRtcScreen() {
@@ -375,34 +382,44 @@ void refreshIdleRtcScreen() {
 
   DateTime now = rtc.now();
   unsigned long currentMinuteEpoch = (unsigned long)(now.unixtime() / 60UL);
-  bool shouldRedraw = false;
+  bool minuteChanged = false;
+  bool shouldUpdateTime = false;
 
   if (!lastIdleMinuteEpochInitialized) {
     lastIdleMinuteEpoch = currentMinuteEpoch;
     lastIdleMinuteEpochInitialized = true;
     rtcClockBlinkVisible = true;
     lastRtcClockBlinkToggleMs = millis();
-    shouldRedraw = true;
+    minuteChanged = true;
+    shouldUpdateTime = true;
   }
 
   if (currentMinuteEpoch != lastIdleMinuteEpoch) {
     lastIdleMinuteEpoch = currentMinuteEpoch;
-    shouldRedraw = true;
+    minuteChanged = true;
+    shouldUpdateTime = true;
   }
 
   unsigned long nowMs = millis();
   if (nowMs - lastRtcClockBlinkToggleMs >= 500UL) {
     lastRtcClockBlinkToggleMs = nowMs;
     rtcClockBlinkVisible = !rtcClockBlinkVisible;
-    shouldRedraw = true;
+    shouldUpdateTime = true;
   }
 
-  if (shouldRedraw) {
+  if (!shouldUpdateTime) {
+    return;
+  }
+
+  if (minuteChanged) {
     showInitialScreen();
+  } else {
+    renderIdleTimeLine(now);
   }
 }
 
 void activateChargeMode() {
+
   chargeModeActive = true;
   digitalWrite(RELAY_PIN, HIGH); // Relais ON
 
