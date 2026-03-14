@@ -56,4 +56,9 @@ Ce dépôt contient un exemple **prêt à tester** pour ton besoin :
 - `PLAY` : reprend le minuteur à partir du temps restant.
 - `STOP` : remet le minuteur à zéro et coupe le relais (message LCD: `Stop`).
 
+Règles de contrôle :
+
+- seul le numéro qui a démarré le minuteur peut envoyer `PAUSE` ou `STOP`.
+- si un nouveau SMS `HH:MM:SS` arrive alors qu'un minuteur est déjà actif, il est mis en attente et démarre automatiquement à la fin du minuteur en cours.
+
 Si le format est invalide, le module répond par SMS avec un message d'erreur.
