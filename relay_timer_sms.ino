@@ -30,7 +30,7 @@ unsigned long lastIdleRtcDisplayMs = 0;
 bool rtcClockBlinkVisible = true;
 unsigned long lastIdleMinuteEpoch = 0;
 bool lastIdleMinuteEpochInitialized = false;
-unsigned long rtcClockBlinkRestoreMs = 0;
+unsigned long lastRtcClockBlinkToggleMs = 0;
 
 RTC_DS3231 rtc;
 bool rtcAvailable = false;
@@ -375,27 +375,29 @@ void refreshIdleRtcScreen() {
 
   DateTime now = rtc.now();
   unsigned long currentMinuteEpoch = (unsigned long)(now.unixtime() / 60UL);
+  bool shouldRedraw = false;
 
   if (!lastIdleMinuteEpochInitialized) {
     lastIdleMinuteEpoch = currentMinuteEpoch;
     lastIdleMinuteEpochInitialized = true;
     rtcClockBlinkVisible = true;
-    rtcClockBlinkRestoreMs = 0;
-    showInitialScreen();
-    return;
+    lastRtcClockBlinkToggleMs = millis();
+    shouldRedraw = true;
   }
 
   if (currentMinuteEpoch != lastIdleMinuteEpoch) {
     lastIdleMinuteEpoch = currentMinuteEpoch;
-    rtcClockBlinkVisible = false;
-    rtcClockBlinkRestoreMs = millis() + 250UL;
-    showInitialScreen();
-    return;
+    shouldRedraw = true;
   }
 
-  if (!rtcClockBlinkVisible && rtcClockBlinkRestoreMs > 0 && millis() >= rtcClockBlinkRestoreMs) {
-    rtcClockBlinkVisible = true;
-    rtcClockBlinkRestoreMs = 0;
+  unsigned long nowMs = millis();
+  if (nowMs - lastRtcClockBlinkToggleMs >= 500UL) {
+    lastRtcClockBlinkToggleMs = nowMs;
+    rtcClockBlinkVisible = !rtcClockBlinkVisible;
+    shouldRedraw = true;
+  }
+
+  if (shouldRedraw) {
     showInitialScreen();
   }
 }
