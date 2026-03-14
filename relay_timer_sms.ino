@@ -269,11 +269,27 @@ void displayRemaining(unsigned long totalSec) {
   char line2[17];
   formatClock(totalSec, line2, sizeof(line2));
 
+  int timerCol = (16 - (int)strlen(line2)) / 2;
+  if (timerCol < 0) timerCol = 0;
+
+  char line1[17];
+  if (rtcAvailable && timerEndEpoch > 0) {
+    DateTime endAt(timerEndEpoch);
+    snprintf(line1, sizeof(line1), "%02d/%02d/%04d %02d:%02d", endAt.day(), endAt.month(), endAt.year(), endAt.hour(), endAt.minute());
+  } else {
+    snprintf(line1, sizeof(line1), "MINUTEUR ACTIF");
+  }
+
+  int endCol = (16 - (int)strlen(line1)) / 2;
+  if (endCol < 0) endCol = 0;
+
   lcd.setCursor(0, 0);
-  lcd.print("MINUTEUR ACTIF  ");
+  lcd.print("                ");
+  lcd.setCursor(endCol, 0);
+  lcd.print(line1);
   lcd.setCursor(0, 1);
   lcd.print("                ");
-  lcd.setCursor(0, 1);
+  lcd.setCursor(timerCol, 1);
   lcd.print(line2);
 
   Serial.print("[TIMER] ");
