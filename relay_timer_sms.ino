@@ -32,6 +32,8 @@ unsigned long lastIdleMinuteEpoch = 0;
 bool lastIdleMinuteEpochInitialized = false;
 unsigned long lastRtcClockBlinkToggleMs = 0;
 char lastTimerHeaderLine[17] = "";
+bool lcdDimmed = false;
+unsigned long lastLcdBrightnessCheckMs = 0;
 
 RTC_DS3231 rtc;
 bool rtcAvailable = false;
@@ -378,6 +380,26 @@ void renderIdleTimeLine(const DateTime &now) {
   lcd.print(timeLine);
 }
 
+void updateLcdBrightnessByHour() {
+  if (!rtcAvailable) {
+    return;
+  }
+
+  DateTime now = rtc.now();
+  bool shouldDim = (now.hour() >= 23) || (now.hour() < 5);
+
+  if (shouldDim == lcdDimmed) {
+    return;
+  }
+
+  lcdDimmed = shouldDim;
+  if (lcdDimmed) {
+    lcd.noBacklight();
+  } else {
+    lcd.backlight();
+  }
+}
+
 void showInitialScreen() {
   lcd.clear();
 
@@ -593,6 +615,7 @@ void setup() {
   modemConfigured = configureModemSms();
 
   showInitialScreen();
+  updateLcdBrightnessByHour();
   if (rtcAvailable) {
     lastIdleMinuteEpoch = rtcNowEpoch() / 60UL;
     lastIdleMinuteEpochInitialized = true;
@@ -609,6 +632,12 @@ void loop() {
       delay(1500);
       return;
     }
+  }
+
+  unsigned long nowMs = millis();
+  if (nowMs - lastLcdBrightnessCheckMs >= 10000UL) {
+    lastLcdBrightnessCheckMs = nowMs;
+    updateLcdBrightnessByHour();
   }
 
   // Lecture non bloquante du flux GSM
