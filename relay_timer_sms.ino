@@ -310,13 +310,16 @@ void displayPauseScreen(bool showValue) {
     snprintf(line2, sizeof(line2), "                ");
   }
 
+  int timerCol = (16 - (int)strlen(line2)) / 2;
+  if (timerCol < 0) timerCol = 0;
+
   lcd.setCursor(0, 0);
   lcd.print("                ");
   lcd.setCursor(5, 0);
   lcd.print("Pause");
   lcd.setCursor(0, 1);
   lcd.print("                ");
-  lcd.setCursor(0, 1);
+  lcd.setCursor(timerCol, 1);
   lcd.print(line2);
 }
 
