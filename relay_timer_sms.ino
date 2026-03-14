@@ -123,13 +123,14 @@ void restoreTimerAfterPowerCut() {
 
   if (state.timerActive) {
     unsigned long nowEpoch = rtcNowEpoch();
-    if (state.endEpoch > nowEpoch) {
+    if (state.pausedRemaining > 0) {
       timerActive = true;
-      timerEndEpoch = state.endEpoch;
-      remainingSeconds = timerEndEpoch - nowEpoch;
+      remainingSeconds = state.pausedRemaining;
+      timerEndEpoch = nowEpoch + remainingSeconds;
       digitalWrite(RELAY_PIN, HIGH);
+      persistTimerState();
       displayRemaining(remainingSeconds);
-      Serial.println("[RTC] Minuteur restaure apres coupure");
+      Serial.println("[RTC] Minuteur restaure apres coupure (fin reajustee)");
       return;
     }
 
