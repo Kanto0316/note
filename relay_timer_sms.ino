@@ -413,7 +413,10 @@ void updateLcdBrightnessByHour() {
   }
 
   DateTime now = rtc.now();
-  bool shouldDim = (now.hour() >= 23) || (now.hour() < 5);
+  int currentMinutes = now.hour() * 60 + now.minute();
+  int dimStartMinutes = 20 * 60;
+  int dimEndMinutes = 5 * 60 + 30;
+  bool shouldDim = (currentMinutes >= dimStartMinutes) || (currentMinutes <= dimEndMinutes);
 
   if (shouldDim == lcdDimmed) {
     return;
